@@ -5,7 +5,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"image"
+	"image/png"
 	"io"
 	"net/http"
 )
@@ -14,6 +17,13 @@ const DefaultUserAgent string = "Mozilla/5.0 (X11; Linux x86_64; rv:141.0) Gecko
 
 type Point struct {
 	X, Y int
+}
+
+func P(x, y int) Point {
+	return Point{
+		X: x,
+		Y: y,
+	}
 }
 
 // Client represents a wplace.live API client
@@ -36,10 +46,33 @@ type PixelResponse struct {
 	Message string `json:"message,omitempty"`
 }
 
-// ImageResponse represents the response from fetching an image
-type ImageResponse struct {
-	Data        []byte
-	ContentType string
+// UserInfo represents the user information from the /me endpoint
+type UserInfo struct {
+	AllianceID             int     `json:"allianceId"`
+	AllianceRole           string  `json:"allianceRole"`
+	Charges                Charges `json:"charges"`
+	Country                string  `json:"country"`
+	Discord                string  `json:"discord"`
+	Droplets               int     `json:"droplets"`
+	Email                  string  `json:"email"`
+	EquippedFlag           int     `json:"equippedFlag"`
+	ExtraColorsBitmap      int     `json:"extraColorsBitmap"`
+	FavoriteLocations      []any   `json:"favoriteLocations"`
+	FlagsBitmap            string  `json:"flagsBitmap"`
+	ID                     int     `json:"id"`
+	IsCustomer             bool    `json:"isCustomer"`
+	Level                  float64 `json:"level"`
+	MaxFavoriteLocations   int     `json:"maxFavoriteLocations"`
+	Name                   string  `json:"name"`
+	NeedsPhoneVerification bool    `json:"needsPhoneVerification"`
+	Picture                string  `json:"picture"`
+	PixelsPainted          int     `json:"pixelsPainted"`
+	ShowLastPixel          bool    `json:"showLastPixel"`
+}
+type Charges struct {
+	CooldownMs int     `json:"cooldownMs"`
+	Count      float64 `json:"count"`
+	Max        int     `json:"max"`
 }
 
 // NewClient creates a new wplace.live client
@@ -65,7 +98,7 @@ func (c *Client) WithBaseURL(url string) *Client {
 }
 
 // PaintPixels paints pixels at the specified coordinates with the specified colors
-func (c *Client) PaintPixels(ctx context.Context, points []Point, colors []int) (*PixelResponse, error) {
+func (c *Client) PaintPixels(ctx context.Context, tile Point, points []Point, colors []int) (*PixelResponse, error) {
 	// Convert points to flat coordinate array
 	coords := make([]int, 0, len(points)*2)
 	for _, p := range points {
@@ -85,7 +118,7 @@ func (c *Client) PaintPixels(ctx context.Context, points []Point, colors []int) 
 	}
 
 	// Create the HTTP request
-	url := fmt.Sprintf("%s/s0/pixel/%d/%d", c.baseURL, 1222, 832)
+	url := fmt.Sprintf("%s/s0/pixel/%d/%d", c.baseURL, tile.X, tile.Y)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(data))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
@@ -127,9 +160,9 @@ func (c *Client) PaintPixels(ctx context.Context, points []Point, colors []int) 
 }
 
 // FetchTile fetches an image tile from the wplace.live API
-func (c *Client) FetchTile(ctx context.Context, server, tileX, tileY int) (*ImageResponse, error) {
+func (c *Client) FetchTile(ctx context.Context, server int, tile Point) (image.Image, error) {
 	// Construct the URL based on the pattern from the cURL request
-	url := fmt.Sprintf("%s/files/s%d/tiles/%d/%d.png", c.baseURL, server, tileX, tileY)
+	url := fmt.Sprintf("%s/files/s%d/tiles/%d/%d.png", c.baseURL, server, tile.X, tile.Y)
 
 	// Create the HTTP request
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
@@ -163,25 +196,82 @@ func (c *Client) FetchTile(ctx context.Context, server, tileX, tileY int) (*Imag
 	defer resp.Body.Close()
 
 	// Read the response body
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
-
 	// Check for non-200 status codes
 	if resp.StatusCode != http.StatusOK {
+		data, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read response body: %w", err)
+		}
+
 		return nil, fmt.Errorf("unexpected status code: %d, response: %s", resp.StatusCode, string(data))
 	}
 
 	// Determine content type from response headers
 	contentType := resp.Header.Get("Content-Type")
-	if contentType == "" {
-		// Default to image/png if not specified
-		contentType = "image/png"
+	if contentType != "image/png" {
+		data, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read response body: %w", err)
+		}
+
+		return nil, fmt.Errorf("unexpected content type code: %s, response: %s", contentType, string(data))
 	}
 
-	return &ImageResponse{
-		Data:        data,
-		ContentType: contentType,
-	}, nil
+	img, err := png.Decode(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	return img, nil
+}
+
+// FetchUserInfo fetches the current user's information from the wplace.live API
+func (c *Client) FetchUserInfo(ctx context.Context) (*UserInfo, error) {
+	// Create the HTTP request
+	url := fmt.Sprintf("%s/me", c.baseURL)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Set headers based on the curl request
+	req.Header.Set("User-Agent", c.userAgent)
+	req.Header.Set("Accept", "*/*")
+	req.Header.Set("Accept-Language", "en-US,en;q=0.7,nl;q=0.3")
+	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
+	req.Header.Set("Referer", "https://wplace.live/")
+	req.Header.Set("Origin", "https://wplace.live")
+	req.Header.Set("DNT", "1")
+	req.Header.Set("Sec-Fetch-Dest", "empty")
+	req.Header.Set("Sec-Fetch-Mode", "cors")
+	req.Header.Set("Sec-Fetch-Site", "same-site")
+	req.Header.Set("Connection", "keep-alive")
+	req.Header.Set("Cookie", c.cookie)
+
+	// Execute the request
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute request: %w", err)
+	}
+
+	// Check for non-200 status codes
+	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	body := respBody(resp)
+	defer body.Close()
+
+	// Parse the response
+	var userInfo UserInfo
+	if err := json.NewDecoder(body).Decode(&userInfo); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &userInfo, nil
+}
+
+func FetchImage(ctx context.Context, tile Point, pixel Point, dimensions Point) (*image.Image, error) {
+	return nil, errors.New("not implemented")
 }

@@ -1,4 +1,3 @@
-// Package main demonstrates how to use the wplace client library
 package main
 
 import (
@@ -7,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/wim/wplace-worker/pkg/wplace"
+	"github.com/jrsap/wplace-worker/pkg/wplace"
 )
 
 func main() {
@@ -21,10 +20,10 @@ func main() {
 	client := wplace.NewClient(cookie)
 
 	// Paint pixels at coordinates (459,167) and (460,168) with color 8
-	resp, err := client.PaintPixels(context.Background(), []wplace.Point{{X: 459, Y: 167}, {X: 460, Y: 168}}, []int{8, 8})
+	resp, err := client.FetchUserInfo(context.Background())
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("Success: %v, Message: %s\n", resp.Success, resp.Message)
+	fmt.Printf("%s: %0.0f/%d pixels available\n", resp.Name, resp.Charges.Count, resp.Charges.Max)
 }

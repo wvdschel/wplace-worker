@@ -1,8 +1,13 @@
-module github.com/wim/wplace-worker
+module github.com/jrsap/wplace-worker
 
 go 1.24.6
 
-require github.com/stretchr/testify v1.10.0
+require (
+	github.com/andybalholm/brotli v1.2.0
+	github.com/dolmen-go/kittyimg v0.0.0-20250610224728-874967bd8ea4
+	github.com/klauspost/compress v1.18.0
+	github.com/stretchr/testify v1.10.0
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect

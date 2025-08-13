@@ -7,5 +7,5 @@ import (
 )
 
 func Test_Colors(t *testing.T) {
-	assert.Len(t, ColorPallet, 31)
+	assert.Len(t, ColorPallette, 32)
 }
