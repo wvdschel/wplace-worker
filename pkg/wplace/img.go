@@ -117,3 +117,116 @@ func colorDistance(c1, c2 color.Color) float64 {
 	//fmt.Printf("color diff between %v and %v: %v\n", c1, c2, res)
 	return res
 }
+
+func ScaleImage(img image.Image, factor float64) image.Image {
+	// Scales an image up or down by factor.
+	// When upscaling, the pixels will be interpolated linearly from their nearest neighbours in the source image.
+	// When downscaling, the pixels will be a weighted average of the source pixels they contain, partially or in full.
+
+	if factor <= 0 {
+		return image.NewRGBA(image.Rect(0, 0, 0, 0))
+	}
+
+	srcBounds := img.Bounds()
+	srcW := srcBounds.Dx()
+	srcH := srcBounds.Dy()
+
+	newW := int(float64(srcW) * factor)
+	newH := int(float64(srcH) * factor)
+
+	if newW <= 0 || newH <= 0 {
+		return image.NewRGBA(image.Rect(0, 0, 0, 0))
+	}
+
+	newBounds := image.Rect(0, 0, newW, newH)
+	newImg := image.NewRGBA(newBounds)
+
+	if factor < 1 {
+		// Downscaling: use weighted average of source pixels
+		for i := 0; i < newW; i++ {
+			for j := 0; j < newH; j++ {
+				// Calculate source rectangle for current destination pixel
+				sx0 := float64(i) / factor
+				sy0 := float64(j) / factor
+				sx1 := sx0 + 1.0/factor
+				sy1 := sy0 + 1.0/factor
+
+				// Get integer bounds for source pixels
+				ix0 := int(sx0)
+				iy0 := int(sy0)
+				ix1 := int(sx1)
+				iy1 := int(sy1)
+
+				var totalR, totalG, totalB, totalA uint32
+				count := 0
+
+				for ix := ix0; ix < ix1; ix++ {
+					for iy := iy0; iy < iy1; iy++ {
+						if ix >= srcBounds.Min.X && ix < srcBounds.Max.X &&
+							iy >= srcBounds.Min.Y && iy < srcBounds.Max.Y {
+							c := img.At(ix, iy)
+							r, g, b, a := c.RGBA()
+							totalR += r
+							totalG += g
+							totalB += b
+							totalA += a
+							count++
+						}
+					}
+				}
+
+				if count == 0 {
+					// No pixels found, use transparent
+					newImg.SetRGBA(i, j, color.RGBA{0, 0, 0, 0})
+					continue
+				}
+
+				// Average the components
+				avgR := totalR / uint32(count)
+				avgG := totalG / uint32(count)
+				avgB := totalB / uint32(count)
+				avgA := totalA / uint32(count)
+
+				newImg.SetRGBA(i, j, color.RGBA{
+					R: uint8(avgR >> 8),
+					G: uint8(avgG >> 8),
+					B: uint8(avgB >> 8),
+					A: uint8(avgA >> 8),
+				})
+			}
+		}
+	} else {
+		// Upscaling: use nearest neighbor
+		for i := 0; i < newW; i++ {
+			for j := 0; j < newH; j++ {
+				// Map destination coordinates to source
+				x := srcBounds.Min.X + int(float64(i)/factor)
+				y := srcBounds.Min.Y + int(float64(j)/factor)
+
+				// Clamp to source bounds
+				if x < srcBounds.Min.X {
+					x = srcBounds.Min.X
+				} else if x >= srcBounds.Max.X {
+					x = srcBounds.Max.X - 1
+				}
+
+				if y < srcBounds.Min.Y {
+					y = srcBounds.Min.Y
+				} else if y >= srcBounds.Max.Y {
+					y = srcBounds.Max.Y - 1
+				}
+
+				c := img.At(x, y)
+				r, g, b, a := c.RGBA()
+				newImg.SetRGBA(i, j, color.RGBA{
+					R: uint8(r >> 8),
+					G: uint8(g >> 8),
+					B: uint8(b >> 8),
+					A: uint8(a >> 8),
+				})
+			}
+		}
+	}
+
+	return newImg
+}

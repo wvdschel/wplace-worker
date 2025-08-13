@@ -198,7 +198,8 @@ func (c *Client) FetchTile(ctx context.Context, server int, tile Point) (image.I
 	// Read the response body
 	// Check for non-200 status codes
 	if resp.StatusCode != http.StatusOK {
-		data, err := io.ReadAll(resp.Body)
+		body := respBody(resp)
+		data, err := io.ReadAll(body)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read response body: %w", err)
 		}
@@ -253,15 +254,14 @@ func (c *Client) FetchUserInfo(ctx context.Context) (*UserInfo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
+	body := respBody(resp)
+	defer body.Close()
 
 	// Check for non-200 status codes
 	if resp.StatusCode != http.StatusOK {
-		resp.Body.Close()
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		data, _ := io.ReadAll(body)
+		return nil, fmt.Errorf("unexpected status code: %d: %s", resp.StatusCode, string(data))
 	}
-
-	body := respBody(resp)
-	defer body.Close()
 
 	// Parse the response
 	var userInfo UserInfo
