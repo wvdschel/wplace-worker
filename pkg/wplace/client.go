@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"image"
 	"image/png"
@@ -15,9 +14,7 @@ import (
 
 const DefaultUserAgent string = "Mozilla/5.0 (X11; Linux x86_64; rv:141.0) Gecko/20100101 Firefox/141.0"
 
-type Point struct {
-	X, Y int
-}
+type Point image.Point
 
 func P(x, y int) Point {
 	return Point{
@@ -159,6 +156,52 @@ func (c *Client) PaintPixels(ctx context.Context, tile Point, points []Point, co
 	return &pixelResp, nil
 }
 
+// FetchUserInfo fetches the current user's information from the wplace.live API
+func (c *Client) FetchUserInfo(ctx context.Context) (*UserInfo, error) {
+	// Create the HTTP request
+	url := fmt.Sprintf("%s/me", c.baseURL)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Set headers based on the curl request
+	req.Header.Set("User-Agent", c.userAgent)
+	req.Header.Set("Accept", "*/*")
+	req.Header.Set("Accept-Language", "en-US,en;q=0.7,nl;q=0.3")
+	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
+	req.Header.Set("Referer", "https://wplace.live/")
+	req.Header.Set("Origin", "https://wplace.live")
+	req.Header.Set("DNT", "1")
+	req.Header.Set("Sec-Fetch-Dest", "empty")
+	req.Header.Set("Sec-Fetch-Mode", "cors")
+	req.Header.Set("Sec-Fetch-Site", "same-site")
+	req.Header.Set("Connection", "keep-alive")
+	req.Header.Set("Cookie", c.cookie)
+
+	// Execute the request
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute request: %w", err)
+	}
+	body := respBody(resp)
+	defer body.Close()
+
+	// Check for non-200 status codes
+	if resp.StatusCode != http.StatusOK {
+		data, _ := io.ReadAll(body)
+		return nil, fmt.Errorf("unexpected status code: %d: %s", resp.StatusCode, string(data))
+	}
+
+	// Parse the response
+	var userInfo UserInfo
+	if err := json.NewDecoder(body).Decode(&userInfo); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &userInfo, nil
+}
+
 // FetchTile fetches an image tile from the wplace.live API
 func (c *Client) FetchTile(ctx context.Context, server int, tile Point) (image.Image, error) {
 	// Construct the URL based on the pattern from the cURL request
@@ -226,52 +269,47 @@ func (c *Client) FetchTile(ctx context.Context, server int, tile Point) (image.I
 	return img, nil
 }
 
-// FetchUserInfo fetches the current user's information from the wplace.live API
-func (c *Client) FetchUserInfo(ctx context.Context) (*UserInfo, error) {
-	// Create the HTTP request
-	url := fmt.Sprintf("%s/me", c.baseURL)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+func (c *Client) FetchImage(ctx context.Context, tile Point, pixel Point, dimensions Point) (image.Image, error) {
+	res := image.NewRGBA(image.Rectangle{
+		Max: image.Point(dimensions),
+	})
+
+	currentTile := tile
+	currentPixel := pixel
+	posInRes := P(0, 0)
+
+	for posInRes.Y < dimensions.Y {
+		tileImg, err := c.FetchTile(ctx, 0, currentTile)
+		if err != nil {
+			return nil, err
+		}
+		posInTile := P(currentPixel.X, currentPixel.Y)
+		widthOfTileSection := min(dimensions.X-posInRes.X, tileImg.Bounds().Max.X)
+		heightOfTileSection := min(dimensions.Y-posInRes.Y, tileImg.Bounds().Max.Y)
+
+		blitImage(tileImg, res,
+			image.Rect(posInTile.X, posInTile.Y, widthOfTileSection, heightOfTileSection),
+			image.Point(posInRes))
+
+		posInRes.X += widthOfTileSection
+		currentTile.X += 1
+		if posInRes.X >= dimensions.X {
+			posInRes.X = 0
+			posInRes.Y += heightOfTileSection
+			currentTile.Y += 1
+			currentTile.X = tile.X
+		}
 	}
 
-	// Set headers based on the curl request
-	req.Header.Set("User-Agent", c.userAgent)
-	req.Header.Set("Accept", "*/*")
-	req.Header.Set("Accept-Language", "en-US,en;q=0.7,nl;q=0.3")
-	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
-	req.Header.Set("Referer", "https://wplace.live/")
-	req.Header.Set("Origin", "https://wplace.live")
-	req.Header.Set("DNT", "1")
-	req.Header.Set("Sec-Fetch-Dest", "empty")
-	req.Header.Set("Sec-Fetch-Mode", "cors")
-	req.Header.Set("Sec-Fetch-Site", "same-site")
-	req.Header.Set("Connection", "keep-alive")
-	req.Header.Set("Cookie", c.cookie)
-
-	// Execute the request
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute request: %w", err)
-	}
-	body := respBody(resp)
-	defer body.Close()
-
-	// Check for non-200 status codes
-	if resp.StatusCode != http.StatusOK {
-		data, _ := io.ReadAll(body)
-		return nil, fmt.Errorf("unexpected status code: %d: %s", resp.StatusCode, string(data))
-	}
-
-	// Parse the response
-	var userInfo UserInfo
-	if err := json.NewDecoder(body).Decode(&userInfo); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	return &userInfo, nil
+	return res, nil
 }
 
-func FetchImage(ctx context.Context, tile Point, pixel Point, dimensions Point) (*image.Image, error) {
-	return nil, errors.New("not implemented")
+func min(x ...int) int {
+	minX := x[0]
+	for _, i := range x {
+		if i < minX {
+			minX = i
+		}
+	}
+	return minX
 }

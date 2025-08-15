@@ -122,7 +122,6 @@ func ScaleImage(img image.Image, factor float64) image.Image {
 	// Scales an image up or down by factor.
 	// When upscaling, the pixels will be interpolated linearly from their nearest neighbours in the source image.
 	// When downscaling, the pixels will be a weighted average of the source pixels they contain, partially or in full.
-
 	if factor <= 0 {
 		return image.NewRGBA(image.Rect(0, 0, 0, 0))
 	}
@@ -229,4 +228,26 @@ func ScaleImage(img image.Image, factor float64) image.Image {
 	}
 
 	return newImg
+}
+
+func blitImage(src image.Image, dest *image.RGBA, srcBounds image.Rectangle, destPos image.Point) {
+	// Copy part of src contained within srcBounds into the part of dest contained by destBounds
+	for y := 0; y < srcBounds.Dy(); y++ {
+		srcY := srcBounds.Min.Y + y
+		dstY := destPos.Y + y
+		if dstY >= dest.Bounds().Max.Y || srcY >= src.Bounds().Max.Y {
+			continue
+		}
+		for x := 0; x < srcBounds.Dx(); x++ {
+			srcX := srcBounds.Min.X + x
+			dstX := destPos.X + x
+			if dstX >= dest.Bounds().Max.X || srcX >= src.Bounds().Max.X {
+				continue
+			}
+			dest.Set(dstX, dstY, src.At(srcX, srcY))
+			if x == 0 || y == 0 {
+				dest.Set(dstX, dstY, color.White)
+			}
+		}
+	}
 }
