@@ -13,6 +13,8 @@ import (
 )
 
 const DefaultUserAgent string = "Mozilla/5.0 (X11; Linux x86_64; rv:141.0) Gecko/20100101 Firefox/141.0"
+const TileHeight = 1000
+const TileWidth = 1000
 
 type Point image.Point
 
@@ -73,13 +75,21 @@ type Charges struct {
 }
 
 // NewClient creates a new wplace.live client
-func NewClient(cookie string) *Client {
+func NewClient() *Client {
 	return &Client{
 		httpClient: &http.Client{},
 		baseURL:    "https://backend.wplace.live",
 		userAgent:  DefaultUserAgent,
-		cookie:     cookie,
 	}
+}
+
+func (c *Client) SetCookie(cookie string) {
+	c.cookie = cookie
+}
+
+func (c *Client) WithCookie(cookie string) *Client {
+	c.SetCookie(cookie)
+	return c
 }
 
 // WithHTTPClient allows setting a custom HTTP client

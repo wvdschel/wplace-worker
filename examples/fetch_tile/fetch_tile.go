@@ -11,7 +11,7 @@ import (
 
 func main() {
 	// Create a new client with your session cookie
-	client := wplace.NewClient("")
+	client := wplace.NewClient()
 
 	resp, err := client.FetchImage(context.Background(), wplace.P(1221, 832), wplace.P(0, 0), wplace.P(1900, 1200))
 	if err != nil {
