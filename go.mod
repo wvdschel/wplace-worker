@@ -4,6 +4,7 @@ go 1.24.6
 
 require (
 	github.com/andybalholm/brotli v1.2.0
+	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/dolmen-go/kittyimg v0.0.0-20250610224728-874967bd8ea4
 	github.com/klauspost/compress v1.18.0
 	github.com/stretchr/testify v1.10.0

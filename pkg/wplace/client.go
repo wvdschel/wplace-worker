@@ -10,27 +10,17 @@ import (
 	"image/png"
 	"io"
 	"net/http"
+	"strings"
 )
 
 const DefaultUserAgent string = "Mozilla/5.0 (X11; Linux x86_64; rv:141.0) Gecko/20100101 Firefox/141.0"
-const TileHeight = 1000
-const TileWidth = 1000
-
-type Point image.Point
-
-func P(x, y int) Point {
-	return Point{
-		X: x,
-		Y: y,
-	}
-}
 
 // Client represents a wplace.live API client
 type Client struct {
 	httpClient *http.Client
 	baseURL    string
 	userAgent  string
-	cookie     string
+	cookies    []*http.Cookie
 }
 
 // PixelRequest represents the data needed to paint pixels
@@ -83,12 +73,21 @@ func NewClient() *Client {
 	}
 }
 
-func (c *Client) SetCookie(cookie string) {
-	c.cookie = cookie
+func (c *Client) SetCookieString(cookie string) error {
+	cookies, err := http.ParseCookie(cookie)
+	if err != nil {
+		return err
+	}
+	c.cookies = cookies
+	return nil
+}
+
+func (c *Client) SetCookies(cookies []*http.Cookie) {
+	c.cookies = cookies
 }
 
 func (c *Client) WithCookie(cookie string) *Client {
-	c.SetCookie(cookie)
+	c.SetCookieString(cookie)
 	return c
 }
 
@@ -132,23 +131,7 @@ func (c *Client) PaintPixels(ctx context.Context, tile Point, points []Point, co
 	}
 
 	// Set headers
-	req.Header.Set("User-Agent", c.userAgent)
-	req.Header.Set("Accept", "*/*")
-	req.Header.Set("Accept-Language", "en-US,en;q=0.7,nl;q=0.3")
-	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
-	req.Header.Set("Referer", "https://wplace.live/")
-	req.Header.Set("Content-Type", "text/plain;charset=UTF-8")
-	req.Header.Set("Origin", "https://wplace.live")
-	req.Header.Set("DNT", "1")
-	req.Header.Set("Alt-Used", "backend.wplace.live")
-	req.Header.Set("Connection", "keep-alive")
-	req.Header.Set("Cookie", c.cookie)
-	req.Header.Set("Sec-Fetch-Dest", "empty")
-	req.Header.Set("Sec-Fetch-Mode", "cors")
-	req.Header.Set("Sec-Fetch-Site", "same-site")
-	req.Header.Set("Priority", "u=0")
-	req.Header.Set("Pragma", "no-cache")
-	req.Header.Set("Cache-Control", "no-cache")
+	req.Header = c.generateHeader(true)
 
 	// Execute the request
 	resp, err := c.httpClient.Do(req)
@@ -174,20 +157,7 @@ func (c *Client) FetchUserInfo(ctx context.Context) (*UserInfo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-
-	// Set headers based on the curl request
-	req.Header.Set("User-Agent", c.userAgent)
-	req.Header.Set("Accept", "*/*")
-	req.Header.Set("Accept-Language", "en-US,en;q=0.7,nl;q=0.3")
-	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
-	req.Header.Set("Referer", "https://wplace.live/")
-	req.Header.Set("Origin", "https://wplace.live")
-	req.Header.Set("DNT", "1")
-	req.Header.Set("Sec-Fetch-Dest", "empty")
-	req.Header.Set("Sec-Fetch-Mode", "cors")
-	req.Header.Set("Sec-Fetch-Site", "same-site")
-	req.Header.Set("Connection", "keep-alive")
-	req.Header.Set("Cookie", c.cookie)
+	req.Header = c.generateHeader(true)
 
 	// Execute the request
 	resp, err := c.httpClient.Do(req)
@@ -224,22 +194,7 @@ func (c *Client) FetchTile(ctx context.Context, server int, tile Point) (image.I
 	}
 
 	// Set headers based on the cURL request
-	req.Header.Set("User-Agent", c.userAgent)
-	req.Header.Set("Accept", "image/webp,*/*")
-	req.Header.Set("Accept-Language", "en-US,en;q=0.7,nl;q=0.3")
-	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
-	req.Header.Set("Referer", "https://wplace.live/")
-	req.Header.Set("Origin", "https://wplace.live")
-	req.Header.Set("DNT", "1")
-	req.Header.Set("Sec-Fetch-Dest", "empty")
-	req.Header.Set("Sec-Fetch-Mode", "cors")
-	req.Header.Set("Sec-Fetch-Site", "same-site")
-	req.Header.Set("Connection", "keep-alive")
-
-	// Add cookie if available
-	if c.cookie != "" {
-		req.Header.Set("Cookie", c.cookie)
-	}
+	req.Header = c.generateHeader(false)
 
 	// Execute the request
 	resp, err := c.httpClient.Do(req)
@@ -294,20 +249,23 @@ func (c *Client) FetchImage(ctx context.Context, tile Point, pixel Point, dimens
 			return nil, err
 		}
 		posInTile := P(currentPixel.X, currentPixel.Y)
-		widthOfTileSection := min(dimensions.X-posInRes.X, tileImg.Bounds().Max.X)
-		heightOfTileSection := min(dimensions.Y-posInRes.Y, tileImg.Bounds().Max.Y)
+		widthOfTileSection := min(dimensions.X-posInRes.X, tileImg.Bounds().Max.X-posInTile.X)
+		heightOfTileSection := min(dimensions.Y-posInRes.Y, tileImg.Bounds().Max.Y-posInTile.Y)
 
-		blitImage(tileImg, res,
-			image.Rect(posInTile.X, posInTile.Y, widthOfTileSection, heightOfTileSection),
+		BlitImage(tileImg, res,
+			image.Rect(posInTile.X, posInTile.Y, posInTile.X+widthOfTileSection, posInTile.Y+heightOfTileSection),
 			image.Point(posInRes))
 
 		posInRes.X += widthOfTileSection
 		currentTile.X += 1
+		currentPixel.X = 0
 		if posInRes.X >= dimensions.X {
 			posInRes.X = 0
 			posInRes.Y += heightOfTileSection
 			currentTile.Y += 1
 			currentTile.X = tile.X
+			currentPixel.Y = 0
+			currentPixel.X = pixel.X
 		}
 	}
 
@@ -322,4 +280,28 @@ func min(x ...int) int {
 		}
 	}
 	return minX
+}
+
+func (c *Client) generateHeader(withCookie bool) http.Header {
+	res := http.Header{}
+	res.Set("User-Agent", c.userAgent)
+	res.Set("Accept", "*/*")
+	res.Set("Accept-Language", "en-US,en;q=0.7,nl;q=0.3")
+	res.Set("Accept-Encoding", "gzip, deflate, br, zstd")
+	res.Set("Referer", "https://wplace.live/")
+	res.Set("Origin", "https://wplace.live")
+	res.Set("DNT", "1")
+	res.Set("Sec-Fetch-Dest", "empty")
+	res.Set("Sec-Fetch-Mode", "cors")
+	res.Set("Sec-Fetch-Site", "same-site")
+	res.Set("Connection", "keep-alive")
+	if withCookie {
+		cs := make([]string, len(c.cookies))
+		for i, c_ := range c.cookies {
+			cs[i] = c_.String()
+		}
+		res.Set("Cookie", strings.Join(cs, "; "))
+	}
+
+	return res
 }

@@ -7,6 +7,7 @@ FROM debian:trixie
 
 RUN mkdir /app
 WORKDIR /app
-COPY --from builder ./wplace-bot /app/wplace-bot
+COPY --from=builder ./wplace-bot /app/wplace-bot
 COPY config.json /app/config.json
+COPY templates /app/templates
 ENTRYPOINT ["/app/wplace-bot"]

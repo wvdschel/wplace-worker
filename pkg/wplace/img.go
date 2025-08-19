@@ -230,7 +230,7 @@ func ScaleImage(img image.Image, factor float64) image.Image {
 	return newImg
 }
 
-func blitImage(src image.Image, dest *image.RGBA, srcBounds image.Rectangle, destPos image.Point) {
+func BlitImage(src image.Image, dest *image.RGBA, srcBounds image.Rectangle, destPos image.Point) {
 	// Copy part of src contained within srcBounds into the part of dest contained by destBounds
 	for y := 0; y < srcBounds.Dy(); y++ {
 		srcY := srcBounds.Min.Y + y
@@ -245,9 +245,9 @@ func blitImage(src image.Image, dest *image.RGBA, srcBounds image.Rectangle, des
 				continue
 			}
 			dest.Set(dstX, dstY, src.At(srcX, srcY))
-			if x == 0 || y == 0 {
-				dest.Set(dstX, dstY, color.White)
-			}
+			// if x == 0 || y == 0 {
+			// 	dest.Set(dstX, dstY, color.White)
+			// }
 		}
 	}
 }
