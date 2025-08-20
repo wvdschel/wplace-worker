@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -52,7 +53,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := b.Run(); err != nil {
+	if err := b.Run(context.Background()); err != nil {
 		panic(err)
 	}
 	fmt.Println("exiting")

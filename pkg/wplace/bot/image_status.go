@@ -20,21 +20,22 @@ var (
 		wplace.ConvertColor("#000000"),
 		wplace.ConvertColor("#006600"),
 		wplace.ConvertColor("#aa0000"),
-		wplace.ConvertColor("#aa33aa"),
+		wplace.ConvertColor("#ccf60e"),
 	}
 )
 
 type imageStatus struct {
 	tile                               wplace.Point
 	pixel                              wplace.Point
-	target, current                    image.Image
+	target, current                    image.PalettedImage
 	diff                               *image.Paletted
 	totalPixelCount, correctPixelCount int
+	updated                            bool
 
 	lock *sync.Mutex
 }
 
-func newImageStatus(tile, pixel wplace.Point, target image.Image) *imageStatus {
+func newImageStatus(tile, pixel wplace.Point, target image.PalettedImage) *imageStatus {
 	return &imageStatus{
 		target: target,
 		diff:   image.NewPaletted(target.Bounds(), palette),
@@ -67,7 +68,10 @@ func (i *imageStatus) update(current image.Image) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 
-	i.current = current
+	i.totalPixelCount = 0
+	i.correctPixelCount = 0
+
+	i.current = wplace.ConvertToPallette(current)
 	for y := 0; y < i.target.Bounds().Dy(); y++ {
 		for x := 0; x < i.target.Bounds().Dx(); x++ {
 			expected := i.target.At(x, y)
@@ -76,9 +80,11 @@ func (i *imageStatus) update(current image.Image) {
 				continue // Skip transparant pixels
 			}
 			i.totalPixelCount++
-			if i.target.At(x, y) == i.current.At(x, y) {
+
+			if i.target.ColorIndexAt(x, y) == i.current.ColorIndexAt(x, y) {
 				i.correctPixelCount++
 				i.diff.SetColorIndex(x, y, PIXEL_CORRECT)
+				continue
 			}
 
 			if i.diff.ColorIndexAt(x, y) != PIXEL_IN_PROGRESS {
@@ -86,6 +92,8 @@ func (i *imageStatus) update(current image.Image) {
 			}
 		}
 	}
+
+	i.updated = true
 }
 
 func (i *imageStatus) contains(tile, pixel wplace.Point) bool {
@@ -94,12 +102,13 @@ func (i *imageStatus) contains(tile, pixel wplace.Point) bool {
 	return offset.X < i.target.Bounds().Dx() && offset.Y < i.target.Bounds().Dy()
 }
 
-func (i *imageStatus) getWork(maxCount int) (wplace.Point, []wplace.Point) {
+func (i *imageStatus) getWork(maxCount int) (wplace.Point, []wplace.Point, []int) {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 
 	tile := wplace.P(-1, -1)
 	pixels := make([]wplace.Point, 0, maxCount)
+	colors := make([]int, 0, maxCount)
 	for y := i.diff.Bounds().Min.Y; y < i.diff.Bounds().Max.Y; y++ {
 		if len(pixels) >= maxCount {
 			break
@@ -123,10 +132,11 @@ func (i *imageStatus) getWork(maxCount int) (wplace.Point, []wplace.Point) {
 
 			i.diff.SetColorIndex(x, y, PIXEL_IN_PROGRESS)
 			pixels = append(pixels, p)
+			colors = append(colors, int(i.target.ColorIndexAt(x, y)))
 		}
 	}
 
-	return tile, pixels
+	return tile, pixels, colors
 }
 
 func (i *imageStatus) returnWork(tile wplace.Point, pixels []wplace.Point) {

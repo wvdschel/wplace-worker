@@ -13,7 +13,7 @@ func TestWplaceCloudflareCookies(t *testing.T) {
 	c, err := New()
 	assert.NoError(t, err)
 
-	cookies, err := c.GetCookie(context.Background(), "https://wplace.live", 30*time.Second)
+	cookies, _, err := c.GetAuthentication(context.Background(), "https://wplace.live", 30*time.Second)
 	assert.NoError(t, err)
 
 	cfClearanceFound := false

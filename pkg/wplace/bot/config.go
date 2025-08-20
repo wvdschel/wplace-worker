@@ -29,15 +29,12 @@ type Template struct {
 }
 
 type Limits struct {
-	MaxPixelsPerRequest   int            `json:"maxPixelsPerRequest,omitempty"`
-	MinDelayBetweenPaints *time.Duration `json:"minDelayBetweenPaints,omitempty"`
-	MaxDelayBetweenPaints *time.Duration `json:"maxDelayBetweenPaints,omitempty"`
+	MaxPixelsPerRequest     int `json:"maxPixelsPerRequest,omitempty"`
+	MinSecondsBetweenPaints int `json:"minSecondsBetweenPaints,omitempty"`
+	MaxSecondsBetweenPaints int `json:"maxSecondsBetweenPaints,omitempty"`
 }
 
 func ExampleConfig() *Config {
-	min := 30 * time.Second
-	max := 5 * time.Minute
-
 	retries := 4
 	duration := 15 * time.Second
 
@@ -51,9 +48,9 @@ func ExampleConfig() *Config {
 			},
 		},
 		Limits: Limits{
-			MaxPixelsPerRequest:   20,
-			MinDelayBetweenPaints: &min,
-			MaxDelayBetweenPaints: &max,
+			MaxPixelsPerRequest:     20,
+			MinSecondsBetweenPaints: 30,
+			MaxSecondsBetweenPaints: 300,
 		},
 		Byparr: &ByparrConfig{
 			BaseURL:     "http://localhost:8191/v1",

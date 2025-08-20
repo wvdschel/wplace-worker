@@ -26,5 +26,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("Success: %v, Message: %s\n", resp.Success, resp.Message)
+	fmt.Printf("Success: %v\n", resp)
 }

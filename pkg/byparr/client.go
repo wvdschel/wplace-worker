@@ -33,7 +33,7 @@ func WithBaseURL(u string) Option {
 func New(opts ...Option) (*Client, error) {
 	c := &Client{
 		httpClient: http.DefaultClient,
-		baseURL:    "http://localhost:8191/v1",
+		baseURL:    "http://0.0.0.0:8191/v1",
 	}
 
 	for _, opt := range opts {
@@ -45,7 +45,7 @@ func New(opts ...Option) (*Client, error) {
 	return c, nil
 }
 
-func (c *Client) GetCookie(ctx context.Context, url string, maxDuration time.Duration) ([]*http.Cookie, error) {
+func (c *Client) GetAuthentication(ctx context.Context, url string, maxDuration time.Duration) ([]*http.Cookie, http.Header, error) {
 	reqInfo := Request{
 		Cmd:        CmdRequestGet,
 		URL:        url,
@@ -54,33 +54,33 @@ func (c *Client) GetCookie(ctx context.Context, url string, maxDuration time.Dur
 
 	data, err := json.Marshal(reqInfo)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL, bytes.NewBuffer(data))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to send request: %s", resp.Status)
+		return nil, nil, fmt.Errorf("failed to send request: %s", resp.Status)
 	}
 
 	responseData := &Response{}
 	if err := json.NewDecoder(resp.Body).Decode(responseData); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if responseData.Status != StatusOK || responseData.Message != MessageSuccess {
-		return nil, fmt.Errorf("failed get session cookie: %s", responseData.Message)
+		return nil, nil, fmt.Errorf("failed get session cookie: %s", responseData.Message)
 	}
 
 	res := make([]*http.Cookie, len(responseData.Solution.Cookies))
@@ -96,5 +96,9 @@ func (c *Client) GetCookie(ctx context.Context, url string, maxDuration time.Dur
 		}
 	}
 
-	return res, nil
+	headers := http.Header{}
+	headers.Set("User-Agent", responseData.Solution.UserAgent)
+	// TODO handle headers
+
+	return res, headers, nil
 }

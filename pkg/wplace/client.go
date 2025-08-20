@@ -31,8 +31,9 @@ type PixelRequest struct {
 
 // PixelResponse represents the response from painting pixels
 type PixelResponse struct {
-	Success bool   `json:"success"`
-	Message string `json:"message,omitempty"`
+	Error   string `json:"error,omitempty"`
+	Status  int    `json:"status"`
+	Painted int    `json:"painted"`
 }
 
 // UserInfo represents the user information from the /me endpoint
@@ -103,6 +104,11 @@ func (c *Client) WithBaseURL(url string) *Client {
 	return c
 }
 
+func (c *Client) WithUserAgent(userAgent string) *Client {
+	c.userAgent = userAgent
+	return c
+}
+
 // PaintPixels paints pixels at the specified coordinates with the specified colors
 func (c *Client) PaintPixels(ctx context.Context, tile Point, points []Point, colors []int) (*PixelResponse, error) {
 	// Convert points to flat coordinate array
@@ -138,12 +144,22 @@ func (c *Client) PaintPixels(ctx context.Context, tile Point, points []Point, co
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
-	defer resp.Body.Close()
+	body := respBody(resp)
+	defer body.Close()
+
+	data, err = io.ReadAll(body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read body: %w", err)
+	}
 
 	// Parse the response
 	var pixelResp PixelResponse
-	if err := json.NewDecoder(resp.Body).Decode(&pixelResp); err != nil {
+	if err := json.Unmarshal(data, &pixelResp); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	if pixelResp.Error != "" {
+		return &pixelResp, fmt.Errorf("got error response: %s", string(data))
 	}
 
 	return &pixelResp, nil

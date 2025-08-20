@@ -2,6 +2,7 @@ version: '3.8'
 
 services:
   flaresolverr:
+    # docker run --shm-size=2gb -p 8191:8191 my-byparr:latest
     build:
       context: ./byparr
       dockerfile: Dockerfile
