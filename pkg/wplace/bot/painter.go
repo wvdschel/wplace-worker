@@ -9,6 +9,8 @@ import (
 	"github.com/jrsap/wplace-worker/pkg/wplace"
 )
 
+const turnstileToken = "0.-IvGWVcng4C1p8YUqNoteDWSX0FHv3dmMAqstTjd0AhOBddIaJi_mKBaWSOEMnqvpfvmYyq3Ij24pTPbQ0-g6pUKUdyY_vf0OcEyNYIPk7OVpMCUrjkg9kf9bT_M10XGEa59ndh-NnLhchApfd9gaAwDHh536xmJNY9wtD1nzMgpxLBAvghUsAnqCG8ngcMjRyBSUI1WTHrEDtZ4NUuLKpGV4jWVY3q2-iBsQnsLenbx7FfuzDGmNiVLEs636IKxpGtIi-Q0KBnh4j5oYGRlmF3lfNGIPJpxtk2grvHUyUDIT3V2FT1pqRd5MGucasc_NPatWl42t4z4FQhPUMFEXxEHRDF7UG0eEDErZZ-nv3AUNSL4mFxHII0HkWNEhfbyL7IgrB2uqvMqmalqeUKGk3ZUTjgbnp22gK6p1P81tyPw1-AmPKTOwnHDcpw1wMpBXB-Ljq7GJtV0-ZZatUfGW5DQ6zluwpDcq0MPkaHHv9AV8RqUcTUgppSrqwR47QWhlESJY25Nr5bFEAfPspS2X6EBxXiEkRELm9uI4qGPQ-tSU2QQIlTwH-aE_tfH9pvWnYNSe2BEVJfnMnh2r2NhChn9sqS3n1Yss0sSZX85Rm4mgZix0GXpOFuSHYt0J5IjWl3hQ-DXvoiclyrfcTjGZx8XMHkxpGpS2JWR6Hvtq6DWqRfQkzFBZQj57quQEgT_EWS4-kMpa7h2LZzaKn9Ndvva5iIC6YXQ3p7r6OIPfdRYq9ebjtm3yA1qfI2tmDIQ_u9ktWrXMhPIqxwT7Rcw1VIBXjSwlrmc187JtpMnFyN01EBldP18-RL5f-9SMn6__wBgKSvVD6TpIe-OjOlTSMANSFTA4G9QCi0j1sqRhrE.eNOIEGGiTzet6TPpM9aC1Q.1c839e9561177c3b9ddc62fb1d611f689451ce9f27d72ddad27f5130ce349175"
+
 func (b *Bot) painter(ctx context.Context, cookieIndex int) {
 	for {
 		if ctx.Err() != nil {
@@ -59,7 +61,7 @@ func (b *Bot) doPaint(ctx context.Context, cookieIdx int, tile wplace.Point, pix
 
 	b.wplaceClient.SetCookies(b.cookies[cookieIdx])
 
-	resp, err := b.wplaceClient.PaintPixels(ctx, tile, pixels, colors)
+	resp, err := b.wplaceClient.PaintPixels(ctx, turnstileToken, tile, pixels, colors)
 	// if resp != nil && resp.Error == "refresh" {
 	// 	b.lock.Unlock()
 	// 	b.refreshCloudFlareToken(ctx, cookieIdx, true)

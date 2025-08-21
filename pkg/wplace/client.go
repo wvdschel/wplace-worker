@@ -25,8 +25,9 @@ type Client struct {
 
 // PixelRequest represents the data needed to paint pixels
 type PixelRequest struct {
-	Colors []int `json:"colors"`
-	Coords []int `json:"coords"`
+	Colors []int  `json:"colors"`
+	Coords []int  `json:"coords"`
+	Token  string `json:"t"`
 }
 
 // PixelResponse represents the response from painting pixels
@@ -110,7 +111,7 @@ func (c *Client) WithUserAgent(userAgent string) *Client {
 }
 
 // PaintPixels paints pixels at the specified coordinates with the specified colors
-func (c *Client) PaintPixels(ctx context.Context, tile Point, points []Point, colors []int) (*PixelResponse, error) {
+func (c *Client) PaintPixels(ctx context.Context, token string, tile Point, points []Point, colors []int) (*PixelResponse, error) {
 	// Convert points to flat coordinate array
 	coords := make([]int, 0, len(points)*2)
 	for _, p := range points {
@@ -121,6 +122,7 @@ func (c *Client) PaintPixels(ctx context.Context, tile Point, points []Point, co
 	payload := PixelRequest{
 		Colors: colors,
 		Coords: coords,
+		Token:  token,
 	}
 
 	// Convert payload to JSON

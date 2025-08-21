@@ -17,7 +17,7 @@ const (
 
 var (
 	palette = []color.Color{
-		wplace.ConvertColor("#000000"),
+		wplace.ConvertColor("#00000000"),
 		wplace.ConvertColor("#006600"),
 		wplace.ConvertColor("#aa0000"),
 		wplace.ConvertColor("#ccf60e"),
