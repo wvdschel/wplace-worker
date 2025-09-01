@@ -49,7 +49,7 @@ func (i *imageStatus) getImage() image.Image {
 	res := image.NewRGBA(image.Rect(0, 0, i.target.Bounds().Dx()*3, i.target.Bounds().Dy()))
 
 	wplace.BlitImage(i.target, res, i.target.Bounds(), image.Point{
-		X: 0,
+		X: i.target.Bounds().Dx() * 2,
 		Y: 0,
 	})
 	wplace.BlitImage(i.current, res, i.target.Bounds(), image.Point{
@@ -57,7 +57,7 @@ func (i *imageStatus) getImage() image.Image {
 		Y: 0,
 	})
 	wplace.BlitImage(i.diff, res, i.target.Bounds(), image.Point{
-		X: i.target.Bounds().Dx() * 2,
+		X: 0,
 		Y: 0,
 	})
 

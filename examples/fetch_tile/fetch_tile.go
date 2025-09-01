@@ -2,28 +2,40 @@ package main
 
 import (
 	"context"
+	"flag"
+	"fmt"
+	"image/png"
 	"log"
 	"os"
+	"time"
 
 	"github.com/dolmen-go/kittyimg"
 	"github.com/jrsap/wplace-worker/pkg/wplace"
 )
 
+var (
+	x = flag.Int("x", 1045, "x coordinate of the tile")
+	y = flag.Int("y", 685, "y coordinate of the tile")
+)
+
 func main() {
+	flag.Parse()
+
 	// Create a new client with your session cookie
 	client := wplace.NewClient()
 
-	resp, err := client.FetchImage(context.Background(), wplace.P(1221, 831), wplace.P(970, 990), wplace.P(512, 512))
+	resp, err := client.FetchTile(context.Background(), 0, wplace.P(*x, *y))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	kittyimg.Fprintln(os.Stdout, resp)
 
-	resp, err = client.FetchImage(context.Background(), wplace.P(1044, 685), wplace.P(134, 434), wplace.P(371, 305))
+	f, err := os.OpenFile(fmt.Sprintf("%d_%d_%s.png", *x, *y, time.Now().Format(time.RFC3339)), os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	kittyimg.Fprintln(os.Stdout, resp)
+	if err := png.Encode(f, resp); err != nil {
+		log.Fatal(err)
+	}
 }

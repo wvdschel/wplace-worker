@@ -2,80 +2,68 @@ package bot
 
 import (
 	"context"
-	"log"
-	"math/rand"
+	"net/http"
 	"time"
 
+	"github.com/avast/retry-go"
 	"github.com/jrsap/wplace-worker/pkg/wplace"
 )
 
-const turnstileToken = "0.-IvGWVcng4C1p8YUqNoteDWSX0FHv3dmMAqstTjd0AhOBddIaJi_mKBaWSOEMnqvpfvmYyq3Ij24pTPbQ0-g6pUKUdyY_vf0OcEyNYIPk7OVpMCUrjkg9kf9bT_M10XGEa59ndh-NnLhchApfd9gaAwDHh536xmJNY9wtD1nzMgpxLBAvghUsAnqCG8ngcMjRyBSUI1WTHrEDtZ4NUuLKpGV4jWVY3q2-iBsQnsLenbx7FfuzDGmNiVLEs636IKxpGtIi-Q0KBnh4j5oYGRlmF3lfNGIPJpxtk2grvHUyUDIT3V2FT1pqRd5MGucasc_NPatWl42t4z4FQhPUMFEXxEHRDF7UG0eEDErZZ-nv3AUNSL4mFxHII0HkWNEhfbyL7IgrB2uqvMqmalqeUKGk3ZUTjgbnp22gK6p1P81tyPw1-AmPKTOwnHDcpw1wMpBXB-Ljq7GJtV0-ZZatUfGW5DQ6zluwpDcq0MPkaHHv9AV8RqUcTUgppSrqwR47QWhlESJY25Nr5bFEAfPspS2X6EBxXiEkRELm9uI4qGPQ-tSU2QQIlTwH-aE_tfH9pvWnYNSe2BEVJfnMnh2r2NhChn9sqS3n1Yss0sSZX85Rm4mgZix0GXpOFuSHYt0J5IjWl3hQ-DXvoiclyrfcTjGZx8XMHkxpGpS2JWR6Hvtq6DWqRfQkzFBZQj57quQEgT_EWS4-kMpa7h2LZzaKn9Ndvva5iIC6YXQ3p7r6OIPfdRYq9ebjtm3yA1qfI2tmDIQ_u9ktWrXMhPIqxwT7Rcw1VIBXjSwlrmc187JtpMnFyN01EBldP18-RL5f-9SMn6__wBgKSvVD6TpIe-OjOlTSMANSFTA4G9QCi0j1sqRhrE.eNOIEGGiTzet6TPpM9aC1Q.1c839e9561177c3b9ddc62fb1d611f689451ce9f27d72ddad27f5130ce349175"
-
-func (b *Bot) painter(ctx context.Context, cookieIndex int) {
+func (b *Bot) painter(ctx context.Context, accountIdx int) {
 	for {
 		if ctx.Err() != nil {
 			break
 		}
 
-		tile, pixels, colors := b.getNextPixels(cookieIndex)
-		log.Printf("painter %d: received %d pixels", cookieIndex, len(pixels))
+		tile, pixels, colors := b.getNextPixels(accountIdx)
+		b.log(accountIdx, "received %d pixels", len(pixels))
 
 		if len(pixels) != 0 {
-			if err := b.refreshCloudFlareToken(ctx, cookieIndex, false); err != nil {
-				log.Printf("painter %d: error refreshing CloudFlare token: %v\n", cookieIndex+1, err)
-			}
-
-			if err := b.doPaint(ctx, cookieIndex, tile, pixels, colors); err != nil {
-				log.Printf("painter %d: error painting pixels: %v\n", cookieIndex+1, err)
+			if err := b.doPaint(ctx, accountIdx, tile, pixels, colors); err != nil {
+				b.log(accountIdx, "error painting pixels: %v", err)
 				b.cancelPixels(tile, pixels)
 			} else {
-				log.Printf("painter %d: painting succesfull", cookieIndex)
+				b.log(accountIdx, "painting succesful")
 			}
 		} else {
-			log.Printf("painter %d: no work received", cookieIndex)
+			b.log(accountIdx, "no work received")
 		}
-
-		timeDiff := b.config.Limits.MaxSecondsBetweenPaints - b.config.Limits.MinSecondsBetweenPaints
-		sleepSeconds := rand.Intn(timeDiff) + b.config.Limits.MinSecondsBetweenPaints
-		sleepTime := time.Duration(sleepSeconds) * time.Second
-		log.Printf("painter %d: sleeping for %v", cookieIndex, sleepTime)
-		time.Sleep(sleepTime)
 	}
 }
 
-func (b *Bot) refreshCloudFlareToken(ctx context.Context, cookieIdx int, force bool) error {
+func (b *Bot) doPaint(ctx context.Context, accountIdx int, tile wplace.Point, pixels []wplace.Point, colors []int) error {
+	defer b.updateUserInfo(ctx, accountIdx)
 	b.lock.Lock()
 	defer b.lock.Unlock()
 
-	cookie, err := b.withCFClearance(ctx, b.cookies[cookieIdx], force)
+	var turnstileToken string
+	var cookies []*http.Cookie
+	err := retry.Do(
+		func() error {
+			var err error
+			turnstileToken, cookies, err = b.cloudbuster.GetToken("https://wplace.live", "")
+			return err
+		},
+		retry.DelayType(retry.BackOffDelay),
+		retry.Delay(100*time.Millisecond),
+		retry.Attempts(b.config.CloudBuster.MaxRetries))
 	if err != nil {
+		b.log(accountIdx, "failed to fetch CF token")
 		return err
 	}
-	b.cookies[cookieIdx] = cookie
-	return nil
-}
+	cookies = append(cookies, b.accounts[accountIdx].cookies...)
 
-func (b *Bot) doPaint(ctx context.Context, cookieIdx int, tile wplace.Point, pixels []wplace.Point, colors []int) error {
-	b.lock.Lock()
-	defer b.lock.Unlock()
-
-	b.wplaceClient.SetCookies(b.cookies[cookieIdx])
-
+	b.wplaceClient.SetCookies(cookies)
 	resp, err := b.wplaceClient.PaintPixels(ctx, turnstileToken, tile, pixels, colors)
-	// if resp != nil && resp.Error == "refresh" {
-	// 	b.lock.Unlock()
-	// 	b.refreshCloudFlareToken(ctx, cookieIdx, true)
-	// 	b.lock.Lock()
-	// }
 	_ = resp
 	return err
 }
 
-func (b *Bot) getWorkCount(cookieIdx int) int {
+func (b *Bot) getWorkCount(accountIdx int) int {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 
-	charges := int(b.accounts[cookieIdx].Charges.Count)
+	charges := int(b.accounts[accountIdx].userInfo.Charges.Count)
 	if charges < b.config.Limits.MaxPixelsPerRequest {
 		return charges
 	}
@@ -83,10 +71,21 @@ func (b *Bot) getWorkCount(cookieIdx int) int {
 	return b.config.Limits.MaxPixelsPerRequest
 }
 
-func (b *Bot) getNextPixels(cookieIdx int) (tile wplace.Point, pixels []wplace.Point, colors []int) {
-	for _, img := range b.images {
+func (b *Bot) getNextPixels(accountIdx int) (tile wplace.Point, pixels []wplace.Point, colors []int) {
+	pixelCount := b.getWorkCount(accountIdx)
 
-		tile, pixels, colors = img.getWork(b.getWorkCount(cookieIdx))
+	if pixelCount < b.config.Limits.MinPixelsPerRequest {
+		missingPixels := b.config.Limits.MinPixelsPerRequest - pixelCount
+		sleepTime := 30 * time.Second * time.Duration(missingPixels)
+		b.log(accountIdx, "not enough charges, sleeping %v", sleepTime)
+		time.Sleep(sleepTime)
+	}
+
+	for idx, img := range b.images {
+		if b.config.Templates[idx].Disabled {
+			continue
+		}
+		tile, pixels, colors = img.getWork(pixelCount)
 
 		if len(pixels) != 0 {
 			return tile, pixels, colors
