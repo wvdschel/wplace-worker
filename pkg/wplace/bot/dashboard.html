@@ -257,12 +257,24 @@
         function updateImages(images) {
             const container = document.getElementById('images');
             container.innerHTML = images.map(img => {
-                const progressPercent = img.totalPixels > 0 ? 
+                const progressPercent = img.totalPixels > 0 ?
                     (img.correctPixels / img.totalPixels) * 100 : 0;
+                
+                let imageHtml = '';
+                if (img.imageData) {
+                    imageHtml = `
+                        <div style="margin-bottom: 15px;">
+                            <img src="data:image/png;base64,${img.imageData}"
+                                 alt="Image ${img.index + 1}"
+                                 style="max-width: 100%; height: auto; border-radius: 5px; border: 1px solid #e2e8f0;">
+                        </div>
+                    `;
+                }
                 
                 return `
                     <div class="image-card">
                         <div class="account-name">Image ${img.index + 1}</div>
+                        ${imageHtml}
                         <div class="progress-bar">
                             <div class="progress-fill" style="width: ${progressPercent}%"></div>
                         </div>

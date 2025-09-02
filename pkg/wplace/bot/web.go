@@ -1,9 +1,13 @@
 package bot
 
 import (
+	"bytes"
 	"embed"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"image"
+	"image/png"
 	"log"
 	"net/http"
 	"time"
@@ -26,11 +30,12 @@ type AccountStatus struct {
 
 // ImageProgress represents the progress information for an image
 type ImageProgress struct {
-	Index           int `json:"index"`
-	TotalPixels     int `json:"totalPixels"`
-	CorrectPixels   int `json:"correctPixels"`
-	IncorrectPixels int `json:"incorrectPixels"`
-	ProgressPercent int `json:"progressPercent"`
+	Index           int    `json:"index"`
+	TotalPixels     int    `json:"totalPixels"`
+	CorrectPixels   int    `json:"correctPixels"`
+	IncorrectPixels int    `json:"incorrectPixels"`
+	ProgressPercent int    `json:"progressPercent"`
+	ImageData       string `json:"imageData"`
 }
 
 // DashboardData represents all the data needed for the dashboard
@@ -40,6 +45,19 @@ type DashboardData struct {
 	Logs          []LogEntry      `json:"logs"`
 	TotalCharges  int             `json:"totalCharges"`
 	TotalCapacity int             `json:"totalCapacity"`
+}
+
+// encodeImageToPNG encodes an image to PNG format and returns the bytes
+func encodeImageToPNG(img image.Image) ([]byte, error) {
+	// Create a buffer to hold the PNG data
+	buf := new(bytes.Buffer)
+	// Encode the image to PNG format
+	err := png.Encode(buf, img)
+	if err != nil {
+		return nil, err
+	}
+	// Return the bytes
+	return buf.Bytes(), nil
 }
 
 // WebHandler handles all web server requests
@@ -118,12 +136,25 @@ func (h *WebHandler) handleAPI(w http.ResponseWriter, r *http.Request) {
 			progressPercent = (img.correctPixelCount * 100) / img.totalPixelCount
 		}
 
+		// Get the image data using getImage() and encode as base64 PNG
+		var imageData string
+		if img.current != nil {
+			imageObj := img.getImage()
+			buf, err := encodeImageToPNG(imageObj)
+			if err != nil {
+				log.Printf("Error encoding image %d: %v", i, err)
+			} else {
+				imageData = base64.StdEncoding.EncodeToString(buf)
+			}
+		}
+
 		data.Images[i] = ImageProgress{
 			Index:           i,
 			TotalPixels:     img.totalPixelCount,
 			CorrectPixels:   img.correctPixelCount,
 			IncorrectPixels: incorrectPixels,
 			ProgressPercent: progressPercent,
+			ImageData:       imageData,
 		}
 	}
 
