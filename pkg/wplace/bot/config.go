@@ -11,6 +11,7 @@ type Config struct {
 	Templates   []Template        `json:"templates"`
 	Limits      Limits            `json:"limits"`
 	CloudBuster CloudBusterConfig `json:"cloudbuster"`
+	WebPort     int               `json:"webPort,omitempty"`
 }
 
 type Template struct {
@@ -47,6 +48,7 @@ func ExampleConfig() *Config {
 			BaseURL:    "http://localhost:8000",
 			MaxRetries: 3,
 		},
+		WebPort: 8080,
 	}
 }
 

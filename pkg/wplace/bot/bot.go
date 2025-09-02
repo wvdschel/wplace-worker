@@ -19,10 +19,14 @@ type Bot struct {
 	config       *Config
 	wplaceClient *wplace.Client
 	cloudbuster  *cloudbuster.Client
-	lock         *sync.Mutex
+	lock         *sync.RWMutex
 
 	images   []*imageStatus
 	accounts []*Account
+
+	// Web server fields
+	logBuffer []LogEntry
+	server    *http.Server
 }
 
 func New(config *Config) (*Bot, error) {
@@ -53,8 +57,9 @@ func New(config *Config) (*Bot, error) {
 		config:       config,
 		wplaceClient: c,
 		accounts:     accs,
-		lock:         &sync.Mutex{},
+		lock:         &sync.RWMutex{},
 		images:       imgStatus,
+		logBuffer:    make([]LogEntry, 0),
 		cloudbuster:  cloudbuster.NewClient(config.CloudBuster.BaseURL, http.DefaultClient),
 	}, nil
 }
@@ -134,6 +139,15 @@ func (b *Bot) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	// Start web server if port is configured
+	if b.config.WebPort > 0 {
+		if err := b.StartWebServer(b.config.WebPort); err != nil {
+			log.Printf("Failed to start web server: %v", err)
+		} else {
+			log.Printf("Web server started on port %d", b.config.WebPort)
+		}
+	}
+
 	// Run one update before running the painters
 	if err := b.update(ctx); err != nil {
 		return err
@@ -145,10 +159,26 @@ func (b *Bot) Run(ctx context.Context) error {
 		}
 	}
 
-	for {
-		time.Sleep(time.Second * 30)
-		if err := b.update(ctx); err != nil {
-			return err
+	// Wait for context cancellation or error
+	done := make(chan error, 1)
+	go func() {
+		for {
+			time.Sleep(time.Second * 30)
+			if err := b.update(ctx); err != nil {
+				done <- err
+				return
+			}
 		}
+	}()
+
+	select {
+	case err := <-done:
+		// Update error occurred
+		log.Printf("Bot stopped due to error: %v", err)
+		return err
+	case <-ctx.Done():
+		// Context was cancelled (graceful shutdown)
+		log.Println("Bot shutting down gracefully...")
+		return b.StopWebServer()
 	}
 }
