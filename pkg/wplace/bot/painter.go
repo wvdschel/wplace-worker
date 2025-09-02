@@ -2,6 +2,7 @@ package bot
 
 import (
 	"context"
+	"math/rand"
 	"net/http"
 	"time"
 
@@ -25,6 +26,7 @@ func (b *Bot) painter(ctx context.Context, accountIdx int) {
 			} else {
 				b.log(accountIdx, "painting succesful")
 			}
+			time.Sleep(time.Second * time.Duration(b.config.Limits.MinSecondsBetweenPaints))
 		} else {
 			b.log(accountIdx, "no work received")
 		}
@@ -73,10 +75,11 @@ func (b *Bot) getWorkCount(accountIdx int) int {
 
 func (b *Bot) getNextPixels(accountIdx int) (tile wplace.Point, pixels []wplace.Point, colors []int) {
 	pixelCount := b.getWorkCount(accountIdx)
+	targetCount := min(b.accounts[accountIdx].userInfo.Charges.Max, b.config.Limits.MinPixelsPerRequest)
 
-	if pixelCount < b.config.Limits.MinPixelsPerRequest {
-		missingPixels := b.config.Limits.MinPixelsPerRequest - pixelCount
-		sleepTime := 30 * time.Second * time.Duration(missingPixels)
+	if pixelCount < targetCount {
+		missingPixels := targetCount - pixelCount
+		sleepTime := 30 * time.Second * time.Duration(missingPixels+rand.Intn(20))
 		b.log(accountIdx, "not enough charges, sleeping %v", sleepTime)
 		time.Sleep(sleepTime)
 	}
