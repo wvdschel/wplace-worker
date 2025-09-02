@@ -176,7 +176,6 @@ func (b *Bot) StartWebServer(port int) error {
 	}
 
 	go func() {
-		log.Printf("Starting web server on port %d", port)
 		if err := b.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Printf("Web server error: %v", err)
 		}

@@ -61,27 +61,18 @@ func (b *Bot) doPaint(ctx context.Context, accountIdx int, tile wplace.Point, pi
 	return err
 }
 
-func (b *Bot) getWorkCount(accountIdx int) int {
-	b.lock.Lock()
-	defer b.lock.Unlock()
+func (b *Bot) getNextPixels(accountIdx int) (tile wplace.Point, pixels []wplace.Point, colors []int) {
+	pixelCount := b.config.Limits.MinPixelsPerRequest + rand.Intn(b.config.Limits.MaxPixelsPerRequest-b.config.Limits.MinPixelsPerRequest)
+	pixelCount = min(b.accounts[accountIdx].userInfo.Charges.Max, pixelCount)
+	b.log(accountIdx, "targeting %d pixels in next paint", pixelCount)
 
 	charges := int(b.accounts[accountIdx].userInfo.Charges.Count)
-	if charges < b.config.Limits.MaxPixelsPerRequest {
-		return charges
-	}
-
-	return b.config.Limits.MaxPixelsPerRequest
-}
-
-func (b *Bot) getNextPixels(accountIdx int) (tile wplace.Point, pixels []wplace.Point, colors []int) {
-	pixelCount := b.getWorkCount(accountIdx)
-	targetCount := min(b.accounts[accountIdx].userInfo.Charges.Max, b.config.Limits.MinPixelsPerRequest)
-
-	if pixelCount < targetCount {
-		missingPixels := targetCount - pixelCount
+	for charges < pixelCount {
+		missingPixels := pixelCount - charges
 		sleepTime := 30 * time.Second * time.Duration(missingPixels+rand.Intn(20))
 		b.log(accountIdx, "not enough charges, sleeping %v", sleepTime)
 		time.Sleep(sleepTime)
+		charges = int(b.accounts[accountIdx].userInfo.Charges.Count)
 	}
 
 	for idx, img := range b.images {
