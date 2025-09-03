@@ -166,18 +166,17 @@
 
         <button class="refresh-btn" onclick="location.reload()">Refresh Dashboard</button>
 
-        <div class="stats" id="stats">
-            <div class="stat-card">
-                <div class="stat-value" id="totalCharges">0</div>
-                <div class="stat-label">Total Charges</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="totalCapacity">0</div>
-                <div class="stat-label">Total Capacity</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="totalProgress">0%</div>
-                <div class="stat-label">Total Progress</div>
+        <div class="section" style="margin-bottom: 30px;">
+            <h2>Overall Progress</h2>
+            <div style="margin-top: 15px;">
+                <div class="progress-bar" style="height: 25px;">
+                    <div class="progress-fill" id="totalProgressFill" style="width: 0%;"></div>
+                </div>
+                <div class="charge-info" style="margin-top: 10px;">
+                    <span id="totalCharges">0 charges</span>
+                    <span id="totalCapacity">0 total capacity</span>
+                    <span id="totalProgress">0%</span>
+                </div>
             </div>
         </div>
 
@@ -219,11 +218,13 @@
         }
 
         function updateStats(data) {
-            document.getElementById('totalCharges').textContent = data.totalCharges;
-            document.getElementById('totalCapacity').textContent = data.totalCapacity;
-            const totalProgress = data.totalCapacity > 0 ? 
+            const totalProgress = data.totalCapacity > 0 ?
                 Math.round((data.totalCharges / data.totalCapacity) * 100) : 0;
-            document.getElementById('totalProgress').textContent = totalProgress + '%';
+            
+            document.getElementById('totalCharges').textContent = `${data.totalCharges} charges used`;
+            document.getElementById('totalCapacity').textContent = `${data.totalCapacity} total capacity`;
+            document.getElementById('totalProgress').textContent = `${totalProgress}%`;
+            document.getElementById('totalProgressFill').style.width = `${totalProgress}%`;
         }
 
         function updateAccounts(accounts) {

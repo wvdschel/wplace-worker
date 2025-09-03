@@ -2,6 +2,8 @@ package bot
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"math/rand"
 	"net/http"
 	"time"
@@ -17,14 +19,46 @@ func (b *Bot) painter(ctx context.Context, accountIdx int) {
 		}
 
 		tile, pixels, colors := b.getNextPixels(accountIdx)
-		b.log(accountIdx, "received %d pixels", len(pixels))
+		b.log(accountIdx, "painting %d pixels", len(pixels))
 
 		if len(pixels) != 0 {
-			if err := b.doPaint(ctx, accountIdx, tile, pixels, colors); err != nil {
+			if resp, err := b.doPaint(ctx, accountIdx, tile, pixels, colors); err != nil {
 				b.log(accountIdx, "error painting pixels: %v", err)
 				b.cancelPixels(tile, pixels)
 			} else {
-				b.log(accountIdx, "painting succesful")
+				err := retry.Do(
+					func() error {
+						b.refreshImages(ctx)
+						correctPixels := 0
+
+						for _, img := range b.images {
+							if !img.contains(tile, pixels[0]) {
+								continue
+							}
+
+							for _, px := range pixels {
+								if img.getPixelStatus(tile, px) == PIXEL_CORRECT {
+									correctPixels += 1
+								}
+							}
+							break
+						}
+
+						if correctPixels != len(pixels) {
+							return fmt.Errorf("only %d / %d pixels updated correctly", correctPixels, len(pixels))
+						}
+						return nil
+					},
+					retry.Attempts(5),
+					retry.DelayType(retry.BackOffDelay),
+					retry.Delay(1*time.Second))
+				if err != nil {
+					data, _ := json.Marshal(resp)
+					b.log(accountIdx, "failed to paint pixels: %s", err.Error())
+					b.log(accountIdx, "response: %s", string(data))
+				} else {
+					b.log(accountIdx, "painting succesful")
+				}
 			}
 			time.Sleep(time.Second * time.Duration(b.config.Limits.MinSecondsBetweenPaints))
 		} else {
@@ -33,7 +67,7 @@ func (b *Bot) painter(ctx context.Context, accountIdx int) {
 	}
 }
 
-func (b *Bot) doPaint(ctx context.Context, accountIdx int, tile wplace.Point, pixels []wplace.Point, colors []int) error {
+func (b *Bot) doPaint(ctx context.Context, accountIdx int, tile wplace.Point, pixels []wplace.Point, colors []int) (*wplace.PixelResponse, error) {
 	defer b.updateUserInfo(ctx, accountIdx)
 	b.lock.Lock()
 	defer b.lock.Unlock()
@@ -51,14 +85,13 @@ func (b *Bot) doPaint(ctx context.Context, accountIdx int, tile wplace.Point, pi
 		retry.Attempts(b.config.CloudBuster.MaxRetries))
 	if err != nil {
 		b.log(accountIdx, "failed to fetch CF token")
-		return err
+		return nil, err
 	}
 	cookies = append(cookies, b.accounts[accountIdx].cookies...)
 
 	b.wplaceClient.SetCookies(cookies)
 	resp, err := b.wplaceClient.PaintPixels(ctx, turnstileToken, tile, pixels, colors)
-	_ = resp
-	return err
+	return resp, err
 }
 
 func (b *Bot) getNextPixels(accountIdx int) (tile wplace.Point, pixels []wplace.Point, colors []int) {
@@ -69,7 +102,7 @@ func (b *Bot) getNextPixels(accountIdx int) (tile wplace.Point, pixels []wplace.
 	charges := int(b.accounts[accountIdx].userInfo.Charges.Count)
 	for charges < pixelCount {
 		missingPixels := pixelCount - charges
-		sleepTime := 30 * time.Second * time.Duration(missingPixels+rand.Intn(20))
+		sleepTime := 30 * time.Second * time.Duration(missingPixels)
 		b.log(accountIdx, "not enough charges, sleeping %v", sleepTime)
 		time.Sleep(sleepTime)
 		charges = int(b.accounts[accountIdx].userInfo.Charges.Count)

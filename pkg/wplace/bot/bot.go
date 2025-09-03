@@ -87,7 +87,7 @@ func (b *Bot) updateUserInfo(ctx context.Context, i int) error {
 	return nil
 }
 
-func (b *Bot) update(ctx context.Context) error {
+func (b *Bot) refreshImages(ctx context.Context) {
 	for i, img := range b.images {
 		var current image.Image
 		img.updated = false
@@ -104,6 +104,10 @@ func (b *Bot) update(ctx context.Context) error {
 		}
 		img.update(current)
 	}
+}
+
+func (b *Bot) update(ctx context.Context) error {
+	b.refreshImages(ctx)
 
 	for i, img := range b.images {
 		log.Printf("Image #%d: %d of %d pixels done, %d to go\n", i+1, img.correctPixelCount, img.totalPixelCount, img.totalPixelCount-img.correctPixelCount)

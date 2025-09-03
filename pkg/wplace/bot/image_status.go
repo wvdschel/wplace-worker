@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"sync"
@@ -9,10 +10,10 @@ import (
 )
 
 const (
-	PIXEL_IGNORED     = 0
-	PIXEL_CORRECT     = 1
-	PIXEL_INCORRECT   = 2
-	PIXEL_IN_PROGRESS = 3
+	PIXEL_IGNORED     uint8 = 0
+	PIXEL_CORRECT           = 1
+	PIXEL_INCORRECT         = 2
+	PIXEL_IN_PROGRESS       = 3
 )
 
 var (
@@ -100,6 +101,17 @@ func (i *imageStatus) contains(tile, pixel wplace.Point) bool {
 	offset := wplace.CalculateOffset(i.tile, i.pixel, tile, pixel)
 
 	return offset.X < i.target.Bounds().Dx() && offset.Y < i.target.Bounds().Dy()
+}
+
+func (i *imageStatus) getPixelStatus(tile, pixel wplace.Point) uint8 {
+	offset := wplace.CalculateOffset(i.tile, i.pixel, tile, pixel)
+
+	if offset.X > i.target.Bounds().Dx() || offset.Y > i.target.Bounds().Dy() {
+		fmt.Println("pixel is outside of image, cannot check status")
+		return 0
+	}
+
+	return i.diff.ColorIndexAt(offset.X, offset.Y)
 }
 
 func (i *imageStatus) getWork(maxCount int) (wplace.Point, []wplace.Point, []int) {
