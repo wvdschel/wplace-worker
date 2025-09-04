@@ -60,10 +60,10 @@ func (b *Bot) painter(ctx context.Context, accountIdx int) {
 					b.log(accountIdx, "painting succesful")
 				}
 			}
-			time.Sleep(time.Second * time.Duration(b.config.Limits.MinSecondsBetweenPaints))
 		} else {
 			b.log(accountIdx, "no work received")
 		}
+		time.Sleep(time.Second * time.Duration(b.config.Limits.MinSecondsBetweenPaints))
 	}
 }
 
