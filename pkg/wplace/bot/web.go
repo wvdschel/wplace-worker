@@ -90,6 +90,13 @@ func (h *WebHandler) handleDashboard(w http.ResponseWriter, r *http.Request) {
 
 // handleAPI serves the API endpoint for dashboard data
 func (h *WebHandler) handleAPI(w http.ResponseWriter, r *http.Request) {
+	images := make([]image.Image, len(h.bot.images))
+	for i, img := range h.bot.images {
+		if img.current != nil {
+			images[i] = img.getImage()
+		}
+	}
+
 	h.bot.lock.RLock()
 	defer h.bot.lock.RUnlock()
 
@@ -139,8 +146,7 @@ func (h *WebHandler) handleAPI(w http.ResponseWriter, r *http.Request) {
 		// Get the image data using getImage() and encode as base64 PNG
 		var imageData string
 		if img.current != nil {
-			imageObj := img.getImage()
-			buf, err := encodeImageToPNG(imageObj)
+			buf, err := encodeImageToPNG(images[i])
 			if err != nil {
 				log.Printf("Error encoding image %d: %v", i, err)
 			} else {
