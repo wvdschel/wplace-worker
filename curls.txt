@@ -1,0 +1,66 @@
+buy droplets:
+
+curl 'https://backend.wplace.live/purchase' \
+  -X POST \
+  -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0' \
+  -H 'Accept: */*' \
+  -H 'Accept-Language: en-US,en;q=0.7,nl;q=0.3' \
+  -H 'Accept-Encoding: gzip, deflate, br, zstd' \
+  -H 'Content-Type: text/plain;charset=UTF-8' \
+  -H 'Referer: https://wplace.live/' \
+  -H 'Origin: https://wplace.live' \
+  -H 'DNT: 1' \
+  -H 'Sec-Fetch-Dest: empty' \
+  -H 'Sec-Fetch-Mode: cors' \
+  -H 'Sec-Fetch-Site: same-site' \
+  -H 'Connection: keep-alive' \
+  -H 'Cookie: cf_clearance=zFCke2qY6QdMaY9xJAmRs0H0GB.kxmLJsR06GENVZ0c-1756920823-1.2.1.1-5YjWXJSh5RrnEx9XGWuNw9_fiq0I2vHLKC6gyGPS.Qbf6.5ezK4Qbfkbfp1YLIAnRabLTTkb2RCIpXKAJSXHM3tw54k72hHcXvg1XDPCTZCQ8JaY4YBtUbSrOga9OhN_qB1kxQhy7zbeAWxd3vzbLgK_WKg_oo7dUrYeDNhkbld0S1Qyi0dB2mwk6SEeNPD1sxXKwV8aCqVVp23scZfu4Fy7yRWjMK7yMAMjxCgZbOY; j=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjExMDgxMTY2LCJzZXNzaW9uSWQiOiJ2TE9hdWdXZnNadjh2VEo1NmlqLUVYZXI5emRUcWtlUEFISE4xTW9qVkdVPSIsImlzcyI6IndwbGFjZSIsImV4cCI6MTc1ODM1NDIyOSwiaWF0IjoxNzU3MDU4MjI5fQ.pgAAYmqphL2lwEuvUHEFvcIJ20iwpgoWGxMHb8gGdb8' \
+  -H 'Priority: u=0' \
+  -H 'Pragma: no-cache' \
+  -H 'Cache-Control: no-cache' \
+  -H 'TE: trailers' \
+  --data-raw '{"product":{"id":70,"amount":6}}'
+
+  buy slate color:
+
+  curl 'https://backend.wplace.live/purchase' \
+  -X POST \
+  -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0' \
+  -H 'Accept: */*' \
+  -H 'Accept-Language: en-US,en;q=0.7,nl;q=0.3' \
+  -H 'Accept-Encoding: gzip, deflate, br, zstd' \
+  -H 'Content-Type: text/plain;charset=UTF-8' \
+  -H 'Referer: https://wplace.live/' \
+  -H 'Origin: https://wplace.live' \
+  -H 'DNT: 1' \
+  -H 'Sec-Fetch-Dest: empty' \
+  -H 'Sec-Fetch-Mode: cors' \
+  -H 'Sec-Fetch-Site: same-site' \
+  -H 'Connection: keep-alive' \
+  -H 'Cookie: cf_clearance=pDQ_ighl84Y59dXTTcZRBfj58eU2gSYiO2IYvQQsu_o-1756883054-1.2.1.1-JuapdhC56TzlQuzKVLkejL_0lop1HnWjGDhyFNk13CA95cbeEzBv7kIqkDR1xSzVAVYife6nI.nrVb5NyuZJX0hzplhVtKB6fbpt3McbScLi6ERszalfGlDdrx.QQ16yXmFxudd0U24ZXb27kPZNxqh7Rnkqq2Jbny0DwdFo2h.MXcSxvMOADVh1RlOTGkC6CQN15dxGguHHg5oDcNaMTdtdWlZ0O6pTfHL8ke2hB5Y; s=grnRccQ1cqp3oaoDumE1kQ%3D%3D; j=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjk0MjczMSwic2Vzc2lvbklkIjoiX1NJaWJsX2hybVlCVl8zZHdfOWRjNjhXVldCeWFpZTZEb1NZeXlDNzNQMD0iLCJpc3MiOiJ3cGxhY2UiLCJleHAiOjE3NTgzNTQzMDAsImlhdCI6MTc1NzA1ODMwMH0.ojwMIjtz-UzzMbajRMvwRvyJ9aMyNbhAdNX0zh2aul4' \
+  -H 'Priority: u=0' \
+  -H 'Pragma: no-cache' \
+  -H 'Cache-Control: no-cache' \
+  --data-raw '{"product":{"id":100,"amount":1,"variant":59}}'
+
+  buy light slate:
+
+  curl 'https://backend.wplace.live/purchase' \
+  -X POST \
+  -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0' \
+  -H 'Accept: */*' \
+  -H 'Accept-Language: en-US,en;q=0.7,nl;q=0.3' \
+  -H 'Accept-Encoding: gzip, deflate, br, zstd' \
+  -H 'Content-Type: text/plain;charset=UTF-8' \
+  -H 'Referer: https://wplace.live/' \
+  -H 'Origin: https://wplace.live' \
+  -H 'DNT: 1' \
+  -H 'Sec-Fetch-Dest: empty' \
+  -H 'Sec-Fetch-Mode: cors' \
+  -H 'Sec-Fetch-Site: same-site' \
+  -H 'Connection: keep-alive' \
+  -H 'Cookie: cf_clearance=pDQ_ighl84Y59dXTTcZRBfj58eU2gSYiO2IYvQQsu_o-1756883054-1.2.1.1-JuapdhC56TzlQuzKVLkejL_0lop1HnWjGDhyFNk13CA95cbeEzBv7kIqkDR1xSzVAVYife6nI.nrVb5NyuZJX0hzplhVtKB6fbpt3McbScLi6ERszalfGlDdrx.QQ16yXmFxudd0U24ZXb27kPZNxqh7Rnkqq2Jbny0DwdFo2h.MXcSxvMOADVh1RlOTGkC6CQN15dxGguHHg5oDcNaMTdtdWlZ0O6pTfHL8ke2hB5Y; s=grnRccQ1cqp3oaoDumE1kQ%3D%3D; j=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjk0MjczMSwic2Vzc2lvbklkIjoiX1NJaWJsX2hybVlCVl8zZHdfOWRjNjhXVldCeWFpZTZEb1NZeXlDNzNQMD0iLCJpc3MiOiJ3cGxhY2UiLCJleHAiOjE3NTgzNTQzMDAsImlhdCI6MTc1NzA1ODMwMH0.ojwMIjtz-UzzMbajRMvwRvyJ9aMyNbhAdNX0zh2aul4' \
+  -H 'Priority: u=0' \
+  -H 'Pragma: no-cache' \
+  -H 'Cache-Control: no-cache' \
+  --data-raw '{"product":{"id":100,"amount":1,"variant":60}}'

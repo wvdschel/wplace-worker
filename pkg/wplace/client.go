@@ -4,6 +4,7 @@ package wplace
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"image"
@@ -13,7 +14,7 @@ import (
 	"strings"
 )
 
-const DefaultUserAgent string = "Mozilla/5.0 (X11; Linux x86_64; rv:141.0) Gecko/20100101 Firefox/141.0"
+const DefaultUserAgent string = "Mozilla/5.0 (X11; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0"
 
 // Client represents a wplace.live API client
 type Client struct {
@@ -69,9 +70,15 @@ type Charges struct {
 // NewClient creates a new wplace.live client
 func NewClient() *Client {
 	return &Client{
-		httpClient: &http.Client{},
-		baseURL:    "https://backend.wplace.live",
-		userAgent:  DefaultUserAgent,
+		httpClient: &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					MinVersion: tls.VersionTLS13,
+				},
+			},
+		},
+		baseURL:   "https://backend.wplace.live",
+		userAgent: DefaultUserAgent,
 	}
 }
 
@@ -308,7 +315,6 @@ func (c *Client) generateHeader(withCookie bool) http.Header {
 	res.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 	res.Set("Referer", "https://wplace.live/")
 	res.Set("Origin", "https://wplace.live")
-	res.Set("DNT", "1")
 	res.Set("Sec-Fetch-Dest", "empty")
 	res.Set("Sec-Fetch-Mode", "cors")
 	res.Set("Sec-Fetch-Site", "same-site")

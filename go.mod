@@ -8,6 +8,7 @@ require (
 	github.com/dolmen-go/kittyimg v0.0.0-20250610224728-874967bd8ea4
 	github.com/klauspost/compress v1.18.0
 	github.com/stretchr/testify v1.10.0
+	github.com/tetratelabs/wazero v1.9.0
 	golang.org/x/crypto v0.41.0
 )
 

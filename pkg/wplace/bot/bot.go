@@ -5,12 +5,10 @@ import (
 	"image"
 	"log"
 	"net/http"
-	"os"
 	"sync"
 	"time"
 
 	"github.com/avast/retry-go"
-	"github.com/dolmen-go/kittyimg"
 	"github.com/jrsap/wplace-worker/pkg/cloudbuster"
 	"github.com/jrsap/wplace-worker/pkg/wplace"
 )
@@ -111,9 +109,9 @@ func (b *Bot) update(ctx context.Context) error {
 
 	for i, img := range b.images {
 		log.Printf("Image #%d: %d of %d pixels done, %d to go\n", i+1, img.correctPixelCount, img.totalPixelCount, img.totalPixelCount-img.correctPixelCount)
-		if img.current != nil {
-			kittyimg.Fprintln(os.Stdout, img.getImage())
-		}
+		// if img.current != nil {
+		// 	kittyimg.Fprintln(os.Stdout, img.getImage())
+		// }
 	}
 
 	for i := range b.accounts {
