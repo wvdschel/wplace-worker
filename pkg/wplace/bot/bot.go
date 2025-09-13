@@ -17,19 +17,18 @@ type Bot struct {
 	config       *Config
 	wplaceClient *wplace.Client
 	cloudbuster  *cloudbuster.Client
-	lock         *sync.RWMutex
 
 	images   []*imageStatus
 	accounts []*Account
 
 	// Web server fields
 	logBuffer []LogEntry
+	logLock   *sync.RWMutex
 	server    *http.Server
 }
 
 func New(config *Config) (*Bot, error) {
 	c := wplace.NewClient()
-
 	imgStatus := make([]*imageStatus, len(config.Templates))
 
 	for idx, tmp := range config.Templates {
@@ -44,6 +43,8 @@ func New(config *Config) (*Bot, error) {
 	accs := make([]*Account, len(config.Accounts))
 	for i, acc := range config.Accounts {
 		accs[i] = &acc
+		accs[i].lock = &sync.Mutex{}
+		accs[i].client = wplace.NewClient()
 		var err error
 		accs[i].cookies, err = http.ParseCookie(acc.Cookie)
 		if err != nil {
@@ -55,25 +56,62 @@ func New(config *Config) (*Bot, error) {
 		config:       config,
 		wplaceClient: c,
 		accounts:     accs,
-		lock:         &sync.RWMutex{},
 		images:       imgStatus,
 		logBuffer:    make([]LogEntry, 0),
+		logLock:      &sync.RWMutex{},
 		cloudbuster:  cloudbuster.NewClient(config.CloudBuster.BaseURL, http.DefaultClient),
 	}, nil
 }
 
 func (b *Bot) updateUserInfo(ctx context.Context, i int) error {
-	b.lock.Lock()
-	defer b.lock.Unlock()
-
 	acc := b.accounts[i]
+	acc.lock.Lock()
+	defer acc.lock.Unlock()
 
-	b.wplaceClient.SetCookies(acc.cookies)
+	// Remove expired cookies
+	cookies := make([]*http.Cookie, 0)
+	for _, c := range acc.cookies {
+		emptyTime := time.Time{}
+		if c.Expires != emptyTime && c.Expires.Before(time.Now()) {
+			b.log(i, "Removing cookie %s with expiry %s", c.Name, c.Expires.Format(time.RFC3339))
+			continue
+		}
+		cookies = append(cookies, c)
+	}
+	acc.cookies = cookies
+
+	// Add CF cookie if missing
+	cfFound := false
+	for _, c := range acc.cookies {
+		if c.Name == "cf_clearance" {
+			cfFound = true
+			break
+		}
+	}
+	if !cfFound {
+		cookies := make([]*http.Cookie, 0)
+		err := retry.Do(
+			func() error {
+				var err error
+				_, cookies, err = b.cloudbuster.GetToken("https://wplace.live", "")
+				return err
+			},
+			retry.DelayType(retry.BackOffDelay),
+			retry.Delay(100*time.Millisecond),
+			retry.Attempts(b.config.CloudBuster.MaxRetries))
+		if err != nil {
+			b.log(i, "failed to fetch CF token")
+			return err
+		}
+		acc.cookies = append(acc.cookies, cookies...)
+	}
+
+	acc.client.SetCookies(acc.cookies)
 
 	var userInfo *wplace.UserInfo
 	err := retry.Do(func() error {
 		var err error
-		userInfo, err = b.wplaceClient.FetchUserInfo(ctx)
+		userInfo, err = acc.client.FetchUserInfo(ctx)
 		return err
 	}, defaultRetryOpts...)
 

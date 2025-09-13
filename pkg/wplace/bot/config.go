@@ -2,6 +2,7 @@ package bot
 
 import (
 	"net/http"
+	"sync"
 
 	"github.com/jrsap/wplace-worker/pkg/wplace"
 )
@@ -59,6 +60,8 @@ type Account struct {
 
 	userInfo wplace.UserInfo
 	cookies  []*http.Cookie
+	lock     *sync.Mutex
+	client   *wplace.Client
 }
 
 type CloudBusterConfig struct {

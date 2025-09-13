@@ -69,8 +69,8 @@ func (b *Bot) painter(ctx context.Context, accountIdx int) {
 
 func (b *Bot) doPaint(ctx context.Context, accountIdx int, tile wplace.Point, pixels []wplace.Point, colors []int) (*wplace.PixelResponse, error) {
 	defer b.updateUserInfo(ctx, accountIdx)
-	b.lock.Lock()
-	defer b.lock.Unlock()
+	b.accounts[accountIdx].lock.Lock()
+	defer b.accounts[accountIdx].lock.Unlock()
 
 	var turnstileToken string
 	var cookies []*http.Cookie
@@ -89,8 +89,8 @@ func (b *Bot) doPaint(ctx context.Context, accountIdx int, tile wplace.Point, pi
 	}
 	cookies = append(cookies, b.accounts[accountIdx].cookies...)
 
-	b.wplaceClient.SetCookies(cookies)
-	resp, err := b.wplaceClient.PaintPixels(ctx, turnstileToken, tile, pixels, colors)
+	b.accounts[accountIdx].client.SetCookies(cookies)
+	resp, err := b.accounts[accountIdx].client.PaintPixels(ctx, turnstileToken, tile, pixels, colors)
 	return resp, err
 }
 

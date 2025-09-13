@@ -2,6 +2,7 @@ package pawtect
 
 import (
 	"context"
+	"log"
 
 	"github.com/tetratelabs/wazero"
 	"github.com/tetratelabs/wazero/api"
@@ -14,6 +15,7 @@ func wbgModule(r wazero.Runtime) api.Module {
 	// __wbg_crypto_574e78ad8b13b65f (param externref) (result externref)
 	builder.NewFunctionBuilder().
 		WithFunc(func(ctx context.Context, ref uintptr) uintptr {
+			log.Printf("wbg.__wbg_crypto_574e78ad8b13b65f called")
 			// TODO: Implement crypto functionality
 			return 0
 		}).
@@ -22,6 +24,7 @@ func wbgModule(r wazero.Runtime) api.Module {
 	// __wbindgen_is_object (param externref) (result i32)
 	builder.NewFunctionBuilder().
 		WithFunc(func(ctx context.Context, ref uintptr) int32 {
+			log.Printf("wbg.__wbindgen_is_object called")
 			// TODO: Implement object check
 			return 0
 		}).
@@ -30,6 +33,7 @@ func wbgModule(r wazero.Runtime) api.Module {
 	// __wbg_process_dc0fbacc7c1c06f7 (param externref) (result externref)
 	builder.NewFunctionBuilder().
 		WithFunc(func(ctx context.Context, ref uintptr) uintptr {
+			log.Printf("wbg.__wbg_process_dc0fbacc7c1c06f7 called")
 			// TODO: Implement process functionality
 			return 0
 		}).
@@ -38,6 +42,7 @@ func wbgModule(r wazero.Runtime) api.Module {
 	// __wbg_versions_c01dfd4722a88165 (param externref) (result externref)
 	builder.NewFunctionBuilder().
 		WithFunc(func(ctx context.Context, ref uintptr) uintptr {
+			log.Printf("wbg.__wbg_versions_c01dfd4722a88165 called")
 			// TODO: Implement versions functionality
 			return 0
 		}).
@@ -46,6 +51,7 @@ func wbgModule(r wazero.Runtime) api.Module {
 	// __wbg_node_905d3e251edff8a2 (param externref) (result externref)
 	builder.NewFunctionBuilder().
 		WithFunc(func(ctx context.Context, ref uintptr) uintptr {
+			log.Printf("wbg.__wbg_node_905d3e251edff8a2 called")
 			// TODO: Implement node functionality
 			return 0
 		}).
@@ -54,6 +60,7 @@ func wbgModule(r wazero.Runtime) api.Module {
 	// __wbindgen_is_string (param externref) (result i32)
 	builder.NewFunctionBuilder().
 		WithFunc(func(ctx context.Context, ref uintptr) int32 {
+			log.Printf("wbg.__wbindgen_is_string called")
 			// TODO: Implement string check
 			return 0
 		}).
@@ -62,6 +69,7 @@ func wbgModule(r wazero.Runtime) api.Module {
 	// __wbg_require_60cc747a6bc5215a (result externref)
 	builder.NewFunctionBuilder().
 		WithFunc(func(ctx context.Context) uintptr {
+			log.Printf("wbg.__wbg_require_60cc747a6bc5215a called")
 			// TODO: Implement require functionality
 			return 0
 		}).
@@ -70,6 +78,7 @@ func wbgModule(r wazero.Runtime) api.Module {
 	// __wbindgen_is_function (param externref) (result i32)
 	builder.NewFunctionBuilder().
 		WithFunc(func(ctx context.Context, ref uintptr) int32 {
+			log.Printf("wbg.__wbindgen_is_function called")
 			// TODO: Implement function check
 			return 0
 		}).
@@ -78,6 +87,7 @@ func wbgModule(r wazero.Runtime) api.Module {
 	// __wbindgen_string_new (param i32 i32) (result externref)
 	builder.NewFunctionBuilder().
 		WithFunc(func(ctx context.Context, ptr uint32, len uint32) uintptr {
+			log.Printf("wbg.__wbindgen_string_new called")
 			// TODO: Implement string creation
 			return 0
 		}).
@@ -86,6 +96,7 @@ func wbgModule(r wazero.Runtime) api.Module {
 	// __wbg_msCrypto_a61aeb35a24c1329 (param externref) (result externref)
 	builder.NewFunctionBuilder().
 		WithFunc(func(ctx context.Context, ref uintptr) uintptr {
+			log.Printf("wbg.__wbg_msCrypto_a61aeb35a24c1329 called")
 			// TODO: Implement msCrypto functionality
 			return 0
 		}).
@@ -94,6 +105,7 @@ func wbgModule(r wazero.Runtime) api.Module {
 	// __wbg_randomFillSync_ac0988aba3254290 (param externref externref)
 	builder.NewFunctionBuilder().
 		WithFunc(func(ctx context.Context, ref1 uintptr, ref2 uintptr) {
+			log.Printf("wbg.__wbg_randomFillSync_ac0988aba3254290 called")
 			// TODO: Implement randomFillSync functionality
 		}).
 		Export("__wbg_randomFillSync_ac0988aba3254290")
@@ -101,6 +113,7 @@ func wbgModule(r wazero.Runtime) api.Module {
 	// __wbg_getRandomValues_b8f5dbd5f3995a9e (param externref externref)
 	builder.NewFunctionBuilder().
 		WithFunc(func(ctx context.Context, ref1 uintptr, ref2 uintptr) {
+			log.Printf("wbg.__wbg_getRandomValues_b8f5dbd5f3995a9e called")
 			// TODO: Implement getRandomValues functionality
 		}).
 		Export("__wbg_getRandomValues_b8f5dbd5f3995a9e")
@@ -108,6 +121,7 @@ func wbgModule(r wazero.Runtime) api.Module {
 	// __wbg_newnoargs_105ed471475aaf50 (param i32 i32) (result externref)
 	builder.NewFunctionBuilder().
 		WithFunc(func(ctx context.Context, ptr uint32, len uint32) uintptr {
+			log.Printf("wbg.__wbg_newnoargs_105ed471475aaf50 called")
 			// TODO: Implement newnoargs functionality
 			return 0
 		}).
@@ -116,6 +130,7 @@ func wbgModule(r wazero.Runtime) api.Module {
 	// __wbg_call_672a4d21634d4a24 (param externref externref) (result externref)
 	builder.NewFunctionBuilder().
 		WithFunc(func(ctx context.Context, ref1 uintptr, ref2 uintptr) uintptr {
+			log.Printf("wbg.__wbg_call_672a4d21634d4a24 called")
 			// TODO: Implement call functionality
 			return 0
 		}).
@@ -124,6 +139,7 @@ func wbgModule(r wazero.Runtime) api.Module {
 	// __wbindgen_is_undefined (param externref) (result i32)
 	builder.NewFunctionBuilder().
 		WithFunc(func(ctx context.Context, ref uintptr) int32 {
+			log.Printf("wbg.__wbindgen_is_undefined called")
 			// TODO: Implement undefined check
 			return 0
 		}).

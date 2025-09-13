@@ -327,5 +327,10 @@ func (c *Client) generateHeader(withCookie bool) http.Header {
 		res.Set("Cookie", strings.Join(cs, "; "))
 	}
 
+	// buff := &bytes.Buffer{}
+	// _ = res.Write(buff)
+
+	// fmt.Printf("Header: %v\n", buff.String())
+
 	return res
 }

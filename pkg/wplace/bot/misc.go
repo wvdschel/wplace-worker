@@ -28,7 +28,7 @@ func (b *Bot) log(accountIdx int, formatString string, ival ...any) {
 	message := fmt.Sprintf(formatString, args...)
 
 	// Store in log buffer
-	b.lock.Lock()
+	b.logLock.Lock()
 	b.logBuffer = append(b.logBuffer, LogEntry{
 		Time:    time.Now().Format("15:04:05"),
 		Message: message,
@@ -37,7 +37,7 @@ func (b *Bot) log(accountIdx int, formatString string, ival ...any) {
 	if len(b.logBuffer) > 100 {
 		b.logBuffer = b.logBuffer[len(b.logBuffer)-100:]
 	}
-	b.lock.Unlock()
+	b.logLock.Unlock()
 
 	log.Printf(formatString, args...)
 }

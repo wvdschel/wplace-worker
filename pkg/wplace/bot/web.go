@@ -97,9 +97,7 @@ func (h *WebHandler) handleAPI(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	h.bot.lock.RLock()
-	defer h.bot.lock.RUnlock()
-
+	h.bot.logLock.RLock()
 	data := DashboardData{
 		Accounts:      make([]AccountStatus, len(h.bot.accounts)),
 		Images:        make([]ImageProgress, len(h.bot.images)),
@@ -107,6 +105,7 @@ func (h *WebHandler) handleAPI(w http.ResponseWriter, r *http.Request) {
 		TotalCharges:  0,
 		TotalCapacity: 0,
 	}
+	h.bot.logLock.RUnlock()
 
 	// Process account data
 	for i, acc := range h.bot.accounts {
