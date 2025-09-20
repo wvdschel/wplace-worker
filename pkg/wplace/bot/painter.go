@@ -68,7 +68,7 @@ func (b *Bot) painter(ctx context.Context, accountIdx int) {
 }
 
 func (b *Bot) doPaint(ctx context.Context, accountIdx int, tile wplace.Point, pixels []wplace.Point, colors []int) (*wplace.PixelResponse, error) {
-	defer b.updateUserInfo(ctx, accountIdx)
+	b.updateUserInfo(ctx, accountIdx)
 	b.accounts[accountIdx].lock.Lock()
 	defer b.accounts[accountIdx].lock.Unlock()
 

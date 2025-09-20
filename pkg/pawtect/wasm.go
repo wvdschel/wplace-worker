@@ -25,14 +25,9 @@ func Load() {
 	wbgMod := wbgModule(r)
 	_ = wbgMod // The module is available for import by the Wasm module
 
-	mod, err := r.InstantiateWithConfig(ctx, pawtectWasmModule, wazero.NewModuleConfig())
+	mod, err := r.InstantiateWithConfig(ctx, pawtectWasmModule, wazero.NewModuleConfig().WithStartFunctions("__wbindgen_start"))
 	if err != nil {
 		log.Panicf("failed to instantiate module: %v", err)
-	}
-
-	_, err = mod.ExportedFunction("__wbindgen_start").Call(ctx)
-	if err != nil {
-		log.Panicf("failed to call __wbindgen_start: %v", err)
 	}
 
 	_, err = mod.ExportedFunction("set_user_id").Call(ctx, 12345)

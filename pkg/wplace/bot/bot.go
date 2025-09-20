@@ -68,44 +68,6 @@ func (b *Bot) updateUserInfo(ctx context.Context, i int) error {
 	acc.lock.Lock()
 	defer acc.lock.Unlock()
 
-	// Remove expired cookies
-	cookies := make([]*http.Cookie, 0)
-	for _, c := range acc.cookies {
-		emptyTime := time.Time{}
-		if c.Expires != emptyTime && c.Expires.Before(time.Now()) {
-			b.log(i, "Removing cookie %s with expiry %s", c.Name, c.Expires.Format(time.RFC3339))
-			continue
-		}
-		cookies = append(cookies, c)
-	}
-	acc.cookies = cookies
-
-	// Add CF cookie if missing
-	cfFound := false
-	for _, c := range acc.cookies {
-		if c.Name == "cf_clearance" {
-			cfFound = true
-			break
-		}
-	}
-	if !cfFound {
-		cookies := make([]*http.Cookie, 0)
-		err := retry.Do(
-			func() error {
-				var err error
-				_, cookies, err = b.cloudbuster.GetToken("https://wplace.live", "")
-				return err
-			},
-			retry.DelayType(retry.BackOffDelay),
-			retry.Delay(100*time.Millisecond),
-			retry.Attempts(b.config.CloudBuster.MaxRetries))
-		if err != nil {
-			b.log(i, "failed to fetch CF token")
-			return err
-		}
-		acc.cookies = append(acc.cookies, cookies...)
-	}
-
 	acc.client.SetCookies(acc.cookies)
 
 	var userInfo *wplace.UserInfo
