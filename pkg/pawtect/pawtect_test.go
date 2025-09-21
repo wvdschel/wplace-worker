@@ -1,7 +1,16 @@
-package pawtect
+package pawtect_test
 
-import "testing"
+import (
+	"testing"
 
-func TestLoad(t *testing.T) {
-	Load()
+	"github.com/wvdschel/wplace-worker/pkg/pawtect"
+
+	"github.com/stretchr/testify/require"
+)
+
+func TestSetUserID(t *testing.T) {
+	p, err := pawtect.Load()
+	require.NoError(t, err)
+
+	p.SetUserID(12345)
 }

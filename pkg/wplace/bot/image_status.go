@@ -6,7 +6,7 @@ import (
 	"image/color"
 	"sync"
 
-	"github.com/jrsap/wplace-worker/pkg/wplace"
+	"github.com/wvdschel/wplace-worker/pkg/wplace"
 )
 
 const (

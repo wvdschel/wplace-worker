@@ -6,7 +6,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/jrsap/wplace-worker/pkg/sshtunnel"
+	"github.com/wvdschel/wplace-worker/pkg/sshtunnel"
 	"golang.org/x/crypto/ssh"
 )
 

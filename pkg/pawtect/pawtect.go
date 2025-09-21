@@ -14,6 +14,16 @@ package pawtect
 //   {"colors":[19],"coords":[349,606],"t": cf-token,"fp":???}
 // and headers:
 // 	 x-pawtect-token: X
-// Values for fp:
+// Values for fp (browser fingerprint):
 //    firefox: 8cd6529df58ff24cc4bf4abe31db9ae0
 //    chromium: 20c5d37a4996e3a28c486ea6eecef3c3
+
+func (p *Pawtect) SetUserID(id int) error {
+	f, err := p.instance.Exports.GetFunction("set_user_id")
+	if err != nil {
+		return err
+	}
+
+	_, err = f(id)
+	return err
+}

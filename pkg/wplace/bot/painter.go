@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/avast/retry-go"
-	"github.com/jrsap/wplace-worker/pkg/wplace"
+	"github.com/wvdschel/wplace-worker/pkg/wplace"
 )
 
 func (b *Bot) painter(ctx context.Context, accountIdx int) {

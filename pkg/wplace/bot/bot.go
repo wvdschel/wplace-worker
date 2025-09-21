@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/avast/retry-go"
-	"github.com/jrsap/wplace-worker/pkg/cloudbuster"
-	"github.com/jrsap/wplace-worker/pkg/wplace"
+	"github.com/wvdschel/wplace-worker/pkg/cloudbuster"
+	"github.com/wvdschel/wplace-worker/pkg/wplace"
 )
 
 type Bot struct {

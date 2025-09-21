@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/jrsap/wplace-worker/pkg/wplace"
+	"github.com/wvdschel/wplace-worker/pkg/wplace"
 )
 
 type Config struct {

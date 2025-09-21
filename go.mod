@@ -1,4 +1,4 @@
-module github.com/jrsap/wplace-worker
+module github.com/wvdschel/wplace-worker
 
 go 1.24.6
 
@@ -9,6 +9,7 @@ require (
 	github.com/klauspost/compress v1.18.0
 	github.com/stretchr/testify v1.11.1
 	github.com/tetratelabs/wazero v1.9.0
+	github.com/wasmerio/wasmer-go v1.0.4
 	golang.org/x/crypto v0.41.0
 )
 

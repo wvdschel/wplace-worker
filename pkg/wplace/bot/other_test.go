@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/jrsap/wplace-worker/pkg/wplace"
 	"github.com/stretchr/testify/assert"
+	"github.com/wvdschel/wplace-worker/pkg/wplace"
 )
 
 func TestComparePoints(t *testing.T) {

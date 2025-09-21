@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jrsap/wplace-worker/pkg/wplace/bot"
+	"github.com/wvdschel/wplace-worker/pkg/wplace/bot"
 )
 
 var (

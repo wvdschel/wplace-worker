@@ -1,42 +1,51 @@
 package pawtect
 
 import (
-	"context"
 	_ "embed"
 	"log"
 
-	"github.com/tetratelabs/wazero"
-	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
+	"github.com/wasmerio/wasmer-go/wasmer"
 )
 
 //go:embed pawtect.wasm
 var pawtectWasmModule []byte
 
-func Load() {
-	// Load the WebAssembly module
-	// Choose the context to use for function calls.
-	ctx := context.Background()
+type Pawtect struct {
+	engine   *wasmer.Engine
+	instance *wasmer.Instance
+	store    *wasmer.Store
+}
 
-	// Create a new WebAssembly Runtime.
-	r := wazero.NewRuntime(ctx)
-	defer r.Close(ctx) // This closes everything this Runtime created.
+func Load() (*Pawtect, error) {
+	p := &Pawtect{}
 
-	wasi_snapshot_preview1.MustInstantiate(ctx, r)
-	wbgMod := wbgModule(r)
-	_ = wbgMod // The module is available for import by the Wasm module
+	p.engine = wasmer.NewEngine()
+	p.store = wasmer.NewStore(p.engine)
 
-	mod, err := r.InstantiateWithConfig(ctx, pawtectWasmModule, wazero.NewModuleConfig().WithStartFunctions("__wbindgen_start"))
+	module, err := wasmer.NewModule(p.store, pawtectWasmModule)
 	if err != nil {
-		log.Panicf("failed to instantiate module: %v", err)
+		return nil, err
 	}
 
-	_, err = mod.ExportedFunction("set_user_id").Call(ctx, 12345)
+	importObject := wasmer.NewImportObject()
+	p.registerWBG(importObject)
+
+	p.instance, err = wasmer.NewInstance(module, importObject)
 	if err != nil {
-		log.Panicf("failed to call set_user_id: %v", err)
+		return nil, err
 	}
-	res, err := mod.ExportedFunction("get_load_payload").Call(ctx)
+
+	startFunc, err := p.instance.Exports.GetFunction("__wbindgen_start")
 	if err != nil {
-		log.Panicf("failed to call get_load_payload: %v", err)
+		log.Printf("failed to get __wbindgen_start: %s", err.Error())
+		return nil, err
 	}
-	log.Printf("response: %v", res)
+
+	_, err = startFunc()
+	if err != nil {
+		log.Printf("failed to call __wbindgen_start: %s", err.Error())
+		return nil, err
+	}
+
+	return p, nil
 }
