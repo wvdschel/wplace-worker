@@ -12,5 +12,5 @@ func TestSetUserID(t *testing.T) {
 	p, err := pawtect.Load()
 	require.NoError(t, err)
 
-	p.SetUserID(12345)
+	p.SetUserId(12345)
 }
